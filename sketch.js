@@ -243,8 +243,7 @@ function draw()
         {
             (function (i)
             {
-                let dim = Math.floor(Math.random() * 300) + 100;
-                loadImage(`https://www.placecage.com/${dim}/${dim}`, img =>
+                loadImage(`https://picsum.photos/${Math.floor(Math.random() * 300) + 100}`, img =>
                 {
                     let offscreen = getOffscreenPoint();
                     bubbles.push(new Bubble(Math.pow((60 - i / 2) / 60, 2) * 60 + 40, offscreen.x, offscreen.y, img));
@@ -254,14 +253,14 @@ function draw()
         frame++;
     }
     // have velocity decrease at a faster rate once bubbles have settled down
-    /* else if (frame == 2 * 60)
- {
-     frame++;
-     setTimeout(() =>
-     {
-         velocityDecreaseRate = 0.9995;
-     }, 5000);
- }*/
+    else if (frame == 2 * 60)
+    {
+        frame++;
+        setTimeout(() =>
+        {
+            velocityDecreaseRate = 0.9995;
+        }, 5000);
+    }
 
     cursor(ARROW);
 
