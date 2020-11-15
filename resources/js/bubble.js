@@ -21,7 +21,7 @@ BubbleAnimation.prototype.percentOfFullSize = function ()
     return (this.radius - this.constRadius) / RADIUS_EXPAND;
 }
 
-function Bubble(radius, locX, locY, image)
+function Bubble(radius, locX, locY, image, relativeScale)
 {
     this.radius = radius;
     this.constRadius = radius;
@@ -35,6 +35,7 @@ function Bubble(radius, locX, locY, image)
     this.image = image.get(0, 0, dim, dim);
     this.image.resize(MAX_RADIUS + RADIUS_EXPAND, MAX_RADIUS + RADIUS_EXPAND);
     this.image.mask(circleMask);
+    this.relativeScale = relativeScale;
 }
 
 Bubble.prototype.update = function ()
@@ -73,7 +74,6 @@ Bubble.prototype.draw = function (ctx, batch)
         ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2);
 
         // draw inner circle
-        ctx.noFill();
         ctx.image(this.image, this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
     }
     else
@@ -103,20 +103,54 @@ Bubble.prototype.draw = function (ctx, batch)
 
 Bubble.prototype.drawLabel = function (ctx)
 {
-    drawCurvedText('Raiyaaan', this.animation.apparentRadius - this.animation.stroke + (this.animation.stroke * 0.2), this.animation.stroke, this.location.x, this.location.y, this.animation.expanding ? this.animation.percentOfFullSize() - 1 : 1 - this.animation.percentOfFullSize(), `rgba(0,0,0,${this.animation.percentOfFullSize()})`, ctx);
+    drawCurvedText('Momotarou Kabakura',
+        this.animation.apparentRadius - this.animation.stroke + (this.animation.stroke * lerp(0.2, 0.3, 1 - this.relativeScale)),
+        lerp(0.7, 0.8, this.relativeScale) * this.animation.stroke,
+        this.location.x, this.location.y,
+        this.animation.expanding ? this.animation.percentOfFullSize() - 1 : 1 - this.animation.percentOfFullSize(), `rgba(0,0,0,${this.animation.percentOfFullSize()})`, ctx);
+}
+
+function getGravVector(curLoc)
+{
+    let gravVector;
+    if (windowWidth > windowHeight)
+    {
+        const halfHeight = windowHeight / 2;
+        let leftPoint = createVector(halfHeight, halfHeight),
+            rightPoint = createVector(windowWidth - halfHeight, halfHeight);
+
+        if (curLoc.x >= leftPoint.x && curLoc.x <= rightPoint.x)
+            gravVector = createVector(0, halfHeight - curLoc.y);
+        else
+            gravVector = p5.Vector.sub((curLoc.x > rightPoint.x) ? rightPoint : leftPoint, curLoc);
+    }
+    else
+    {
+        const halfWidth = windowHeight / 2;
+        let topPoint = createVector(halfWidth, halfWidth),
+            bottomPoint = createVector(windowHeight - halfWidth, halfWidth);
+
+        if (curLoc.y <= topPoint.y && curLoc.y >= bottomPoint.y)
+            gravVector = createVector(0, halfWidth - curLoc.x);
+        else
+            gravVector = p5.Vector.sub((curLoc.y > bottomPoint.y) ? bottomPoint : topPoint, curLoc);
+    }
+
+    gravVector.normalize();
+    gravVector.mult(FRAME_LEN * 1000);
+    return gravVector;
 }
 
 function resolveCollision(bubble1, bubble2)
 {
     let normal = p5.Vector.sub(bubble2.location, bubble1.location);
     let distSquared = normal.magSq(),
-        radiusAddedSquared = Math.pow(bubble1.radius + bubble2.radius, 2);
+        radiusAdded = bubble1.radius + bubble2.radius;
 
-    if (distSquared > radiusAddedSquared)
+    if (distSquared > radiusAdded * radiusAdded)
         return;
 
     let dist = Math.sqrt(distSquared);
-    let radiusAdded = Math.sqrt(radiusAddedSquared);
 
     if (dist != 0)
     {
@@ -125,33 +159,26 @@ function resolveCollision(bubble1, bubble2)
     }
     else
     {
-        // Choose random (but consistent) values
         penetration = bubble1.radius;
         normal = createVector(1, 0);
     }
 
-    // Calculate relative velocity
     let rv = p5.Vector.sub(bubble2.velocity, bubble1.velocity);
-
-    // Calculate relative velocity in terms of the normal direction
     let velAlongNormal = rv.dot(normal);
 
-    // Do not resolve if velocities are separating
     if (velAlongNormal > 0)
         return;
 
-    // Calculate impulse scalar
     let j = -(1 + RESTITUTION) * velAlongNormal;
     j /= bubble1.invMass + bubble2.invMass;
 
-    // Apply impulse
     let impulse = p5.Vector.mult(normal, j);
     bubble1.velocity.sub(p5.Vector.div(impulse, bubble1.mass));
     bubble2.velocity.add(p5.Vector.div(impulse, bubble2.mass));
 
-    let percent = 0.6;
-    let slop = 0.05;
-    let correction = p5.Vector.mult(normal, percent * Math.max(penetration - slop, 0) / (bubble1.invMass + bubble2.invMass));
-    bubble1.location.sub(p5.Vector.mult(correction, bubble1.invMass));
-    bubble2.location.add(p5.Vector.mult(correction, bubble2.invMass));
+    let percent = 0.8;
+    let slop = 0.06;
+    let correction = p5.Vector.mult(normal, percent * Math.max(penetration - slop, 0));
+    bubble1.location.sub(p5.Vector.mult(correction, 0.5));
+    bubble2.location.add(p5.Vector.mult(correction, 0.5));
 }
