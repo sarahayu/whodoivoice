@@ -1,14 +1,13 @@
 const FPS = 60,
     FRAME_LEN = 1 / FPS;
 const INTRO_BUBBLE_EVERY_N_FRAME = 4;
-const PHYSICS_PASSES = 3;
 const RESTITUTION = 0.1;
 
 const MAX_RADIUS = 100;
 const RADIUS_EXPAND = 10; // how much physical circle expands when hovered
 const MAX_STROKE = 10; // stroke thickiness for largest circle
 const HOVER_STROKE = 30; // actual stroke for when hovered
-const MAX_BUBBLES = 50;
+const MAX_BUBBLES = 55;
 
 let gravity;
 let velocityFactor; // to prevent bubbles continuously moving after clumping together

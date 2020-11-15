@@ -1,6 +1,6 @@
 function update()
 {
-    velocityFactor = max(velocityFactor *= velocityDecreaseRate, 0.2);
+    velocityFactor = max(velocityFactor *= velocityDecreaseRate, 0.5);
 
     if (bubbleQueue.length != bubbles.length)
     {
@@ -26,11 +26,13 @@ function update()
     for (const bubble of bubbles)
         bubble.update();
 
-    for (let i = 0; i < PHYSICS_PASSES; i++)
-        for (const bubble1 of bubbles)
-            for (const bubble2 of bubbles)
-                if (bubble1 != bubble2)
-                    resolveCollision(bubble1, bubble2);
+    for (let b1 = 0; b1 < bubbles.length - 1; b1++)
+        for (let b2 = b1 + 1; b2 < bubbles.length; b2++)
+            resolveCollisionVelocity(bubbles[b1], bubbles[b2]);
+
+    for (let b1 = 0; b1 < bubbles.length - 1; b1++)
+        for (let b2 = b1 + 1; b2 < bubbles.length; b2++)
+            correctPositions(bubbles[b1], bubbles[b2]);
 }
 
 function render()

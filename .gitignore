@@ -2,4 +2,4 @@
 *.png
 *.log
 vendors/
-resources/js/minified/
+resources/js/minified/*.min.js
