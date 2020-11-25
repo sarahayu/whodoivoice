@@ -21,8 +21,10 @@ BubbleAnimation.prototype.percentOfFullSize = function ()
     return (this.radius - this.constRadius) / RADIUS_EXPAND;
 }
 
-function Bubble(radius, locX, locY, image, relativeScale)
+function Bubble(name, anime, radius, locX, locY, relativeScale, image)
 {
+    this.name = name;
+    this.anime = anime;
     this.radius = radius;
     this.constRadius = radius;
     this.mass = radius * 1000;
@@ -31,10 +33,13 @@ function Bubble(radius, locX, locY, image, relativeScale)
     this.velocity = createVector(0, 0);
     this.animation = new BubbleAnimation(radius);
     this.dragged = false;
-    let dim = min(image.width, image.height);
-    this.image = image.get(0, 0, dim, dim);
-    this.image.resize(MAX_RADIUS + RADIUS_EXPAND, MAX_RADIUS + RADIUS_EXPAND);
-    this.image.mask(circleMask);
+    if (image)
+    {
+        let dim = min(image.width, image.height);
+        this.image = image.get(0, 0, dim, dim);
+        this.image.resize(MAX_RADIUS + RADIUS_EXPAND, MAX_RADIUS + RADIUS_EXPAND);
+        this.image.mask(circleMask);
+    }
     this.relativeScale = relativeScale;
 }
 
@@ -66,6 +71,8 @@ Bubble.prototype.update = function ()
 
 Bubble.prototype.draw = function (ctx, batch)
 {
+    let imgDiameter = this.animation.apparentRadius * 2 - this.animation.stroke * 2;
+
     if (batch)
     {
         // draw white border
@@ -74,7 +81,18 @@ Bubble.prototype.draw = function (ctx, batch)
         ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2);
 
         // draw inner circle
-        ctx.image(this.image, this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
+        ctx.fill('#FEEAE0');
+        ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
+        if (this.image)
+        {
+            ctx.image(
+                this.image,
+                this.location.x,
+                this.location.y,
+                imgDiameter,
+                imgDiameter
+            );
+        }
     }
     else
     {
@@ -96,18 +114,45 @@ Bubble.prototype.draw = function (ctx, batch)
         ctx.noFill();
         ctx.fill('#FEEAE0');
         ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
-        ctx.image(this.image, this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
+        if (this.image)
+        {
+            ctx.image(
+                this.image,
+                this.location.x,
+                this.location.y,
+                imgDiameter,
+                imgDiameter
+            );
+        }
         ctx.pop();
     }
 }
 
 Bubble.prototype.drawLabel = function (ctx)
 {
-    drawCurvedText('Momotarou Kabakura',
-        this.animation.apparentRadius - this.animation.stroke + (this.animation.stroke * lerp(0.2, 0.3, 1 - this.relativeScale)),
-        lerp(0.7, 0.8, this.relativeScale) * this.animation.stroke,
-        this.location.x, this.location.y,
-        this.animation.expanding ? this.animation.percentOfFullSize() - 1 : 1 - this.animation.percentOfFullSize(), `rgba(0,0,0,${this.animation.percentOfFullSize()})`, ctx);
+    drawCurvedText(
+    {
+        str: this.name,
+        radius: this.animation.apparentRadius - this.animation.stroke + (this.animation.stroke * lerp(0.2, 0.3, 1 - this.relativeScale)),
+        scale: lerp(0.7, 0.8, this.relativeScale) * this.animation.stroke,
+        x: this.location.x,
+        y: this.location.y,
+        offset: this.animation.expanding ? this.animation.percentOfFullSize() - 1 : 1 - this.animation.percentOfFullSize(),
+        color: `rgba(0,0,0,${this.animation.percentOfFullSize()})`,
+        ctx: ctx
+    });
+    drawCurvedText(
+    {
+        str: this.anime,
+        radius: -(this.animation.apparentRadius - (this.animation.stroke * lerp(0.2, 0.3, 1 - this.relativeScale))),
+        scale: lerp(0.7, 0.8, this.relativeScale) * this.animation.stroke,
+        x: this.location.x,
+        y: this.location.y,
+        offset: this.animation.expanding ? this.animation.percentOfFullSize() - 1 : 1 - this.animation.percentOfFullSize(),
+        color: `rgba(0,0,0,${this.animation.percentOfFullSize()})`,
+        ctx: ctx,
+        style: BOLD
+    });
 }
 
 function getGravVector(curLoc)
@@ -126,7 +171,7 @@ function getGravVector(curLoc)
     }
     else
     {
-        const halfWidth = windowHeight / 2;
+        const halfWidth = windowWidth / 2;
         let topPoint = createVector(halfWidth, halfWidth),
             bottomPoint = createVector(windowHeight - halfWidth, halfWidth);
 

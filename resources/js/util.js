@@ -14,28 +14,30 @@ function onScreen(point, border)
         point.y >= -border && point.y <= windowHeight + border;
 }
 
-function drawCurvedText(str, radius, scale, x, y, offset, color, ctx)
+/** str, radius, scale, x, y, offset, color, ctx **/
+function drawCurvedText(textOpts)
 {
-    ctx.textFont('Courier New', scale);
+    textOpts.ctx.textFont('Courier New', textOpts.scale);
 
     let arcLength = 0;
-    let totalAngle = ctx.textWidth(str) / radius;
+    let totalAngle = textOpts.ctx.textWidth(textOpts.str) / textOpts.radius;
 
-    for (let i = 0; i < str.length; i++)
+    for (let i = 0; i < textOpts.str.length; i++)
     {
-        let currentChar = str.charAt(i);
-        let w = ctx.textWidth(currentChar);
+        let currentChar = textOpts.str.charAt(i);
+        let w = textOpts.ctx.textWidth(currentChar);
 
         arcLength += w / 2;
-        let theta = arcLength / radius - totalAngle / 2 + offset;
+        let theta = arcLength / textOpts.radius - totalAngle / 2 + textOpts.offset;
 
-        ctx.push();
-        ctx.fill(color);
-        ctx.translate(x, y);
-        ctx.rotate(theta);
-        ctx.translate(0, -radius);
-        ctx.text(currentChar, 0, 0);
-        ctx.pop();
+        textOpts.ctx.push();
+        textOpts.ctx.fill(textOpts.color);
+        textOpts.ctx.translate(textOpts.x, textOpts.y);
+        textOpts.ctx.rotate(theta);
+        textOpts.ctx.translate(0, -textOpts.radius);
+        textOpts.ctx.textStyle(textOpts.style ? textOpts.style : NORMAL);
+        textOpts.ctx.text(currentChar, 0, 0);
+        textOpts.ctx.pop();
 
         arcLength += w / 2;
     }

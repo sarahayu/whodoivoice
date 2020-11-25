@@ -1,25 +1,10 @@
 function update()
 {
-    velocityFactor = max(velocityFactor *= velocityDecreaseRate, 0.5);
+    if (bubbleQueue.length == finalBubbleAmt)
+        $("#loading-message").fadeOut();
 
-    if (bubbleQueue.length != bubbles.length)
-    {
-        if (frame % INTRO_BUBBLE_EVERY_N_FRAME == 0)
-        {
-            bubbles.push(bubbleQueue[bubbles.length]);
-        }
-        frame++;
-    }
-    //  have velocity decrease at a faster rate once bubbles have settled down
-    else if (frame == INTRO_BUBBLE_EVERY_N_FRAME * bubbleQueue.length - INTRO_BUBBLE_EVERY_N_FRAME + 1)
-    {
-        console.log('Slowing down now');
-        frame++;
-        setTimeout(() =>
-        {
-            velocityDecreaseRate = 0.998;
-        }, 2000);
-    }
+    addBubbles();
+    slowdown();
 
     cursor(ARROW);
 
@@ -37,7 +22,7 @@ function update()
 
 function render()
 {
-    background('#DADADA');
+    clear();
 
 
     buffer.clear();
@@ -83,4 +68,25 @@ function render()
         expandingBubble.drawLabel(this);
     }
     pop();
+}
+
+function addBubbles()
+{
+    if (bubbleQueue.length != bubbles.length &&
+        frameCount % INTRO_BUBBLE_EVERY_N_FRAME == 0)
+        bubbles.push(bubbleQueue[bubbles.length]);
+}
+
+function slowdown()
+{
+    velocityFactor = max(velocityFactor *= velocityDecreaseRate, 0.5);
+
+    if (bubbleQueue.length == finalBubbleAmt &&
+        bubbleQueue.length == bubbles.length && velocityDecreaseRate != 0.998)
+    {
+        setTimeout(() =>
+        {
+            velocityDecreaseRate = 0.998;
+        }, 2000);
+    }
 }
