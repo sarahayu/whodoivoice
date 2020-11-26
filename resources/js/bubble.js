@@ -21,10 +21,12 @@ BubbleAnimation.prototype.percentOfFullSize = function ()
     return (this.radius - this.constRadius) / RADIUS_EXPAND;
 }
 
-function Bubble(name, anime, radius, locX, locY, relativeScale, image)
+function Bubble(characterData, radius, locX, locY, relativeScale, image)
 {
-    this.name = name;
-    this.anime = anime;
+    let name = characterData.name,
+        anime = characterData.animeStr;
+    this.name = name.length > 20 ? name.substring(0, 17).trim() + "..." : name;
+    this.anime = anime.length > 20 ? anime.substring(0, 17).trim() + "..." : anime;
     this.radius = radius;
     this.constRadius = radius;
     this.mass = radius * 1000;
@@ -33,6 +35,7 @@ function Bubble(name, anime, radius, locX, locY, relativeScale, image)
     this.velocity = createVector(0, 0);
     this.animation = new BubbleAnimation(radius);
     this.dragged = false;
+    this.characterData = characterData;
     if (image)
     {
         let dim = min(image.width, image.height);
@@ -51,7 +54,7 @@ Bubble.prototype.update = function ()
     this.animation.expanding = (!bubbleGrabbed || this.dragged) && hovered;
     this.animation.update(FRAME_LEN);
     this.radius = this.animation.radius;
-    if (!bubbleGrabbed && hovered && mouseIsPressed)
+    if (!bubbleGrabbed && hovered && mouseDragging)
         this.dragged = bubbleGrabbed = true;
     else if (!bubbleGrabbed)
         this.dragged = false;
@@ -67,6 +70,10 @@ Bubble.prototype.update = function ()
     }
     else
         this.location = createVector(mouseX, mouseY);
+    
+    // did user click on this button?
+    if (hovered && wasClickAction)
+        window.open(`https://myanimelist.net/character/${this.characterData.characterID}`, '_blank');
 }
 
 Bubble.prototype.draw = function (ctx, batch)

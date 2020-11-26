@@ -1,6 +1,6 @@
 function update()
 {
-    if (bubbleQueue.length == finalBubbleAmt)
+    if (bubbleQueue.length == finalBubbleAmt && $("#loading-message").is(":visible"))
         $("#loading-message").fadeOut();
 
     addBubbles();
@@ -23,8 +23,6 @@ function update()
 function render()
 {
     clear();
-
-
     buffer.clear();
 
     // used to order rendering, which is:
@@ -44,13 +42,7 @@ function render()
             bubble.draw(buffer, true);
     }
 
-    push();
-    /*    drawingContext.shadowOffsetX = 2;
-        drawingContext.shadowOffsetY = 2;
-        drawingContext.shadowBlur = 8;
-        drawingContext.shadowColor = 'rgba(0,0,0,0.5)';*/
     image(buffer, 0, 0);
-    pop();
 
     push();
     textAlign(CENTER, BASELINE);
@@ -68,6 +60,36 @@ function render()
         expandingBubble.drawLabel(this);
     }
     pop();
+}
+
+function createBubbles()
+{
+    let createBubble = (characters, offset, img) =>
+    {
+        let offscreen = getOffscreenPoint(),
+            scale = Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2),
+            character = characters[offset];
+        bubbleQueue.push(new Bubble(character/* + `${character.rank ? ' ' + character.rank.toString() : ''}`*/, scale * 60 + 40, offscreen.x, offscreen.y, scale, img));
+    };
+
+    populateCharacterData((characters) =>
+    {
+        $("#loading-message").hide().text("Creating bubbles...").fadeIn();
+        
+        finalBubbleAmt = min(MAX_BUBBLES, characters.length);
+        for (let i = 0; i < finalBubbleAmt; i++)
+            (function (j)
+            {
+                if (!characters[j].picURL.includes("questionmark"))
+                    loadImage(characters[j].picURL, img =>
+                    {
+                        createBubble(characters, j, img);
+                    });
+                else
+                    createBubble(characters, j);
+
+            })(i);
+    });
 }
 
 function addBubbles()

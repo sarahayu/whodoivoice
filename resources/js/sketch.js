@@ -19,9 +19,12 @@ let bubbleQueue = [];
 let bubbles = [];
 let font;
 let bubbleGrabbed = false;
+let mouseDragging = false;
+let wasClickAction = false;
 let circleMask;
 let buffer;
 let finalBubbleAmt;
+let rankings;
 
 function setup()
 {
@@ -40,16 +43,15 @@ function setup()
     buffer = createGraphics(windowWidth, windowHeight);
     buffer.textAlign(CENTER, BASELINE);
     buffer.imageMode(CENTER);
-    /* bubbleQueue.sort((first, second) =>
- {
-     return first.radius - second.radius;
- });*/
 }
 
 function draw()
 {
+    if (finalBubbleAmt && bubbleQueue.length != finalBubbleAmt) 
+        return;
     update();
     render();
+    wasClickAction = false;
 }
 
 function windowResized()
@@ -63,51 +65,12 @@ function windowResized()
 
 function mouseReleased()
 {
+    if (!mouseDragging) wasClickAction = true;
     bubbleGrabbed = false;
+    mouseDragging = false;
 }
 
-function createBubbles()
+function mouseDragged()
 {
-    let createBubble = (characters, offset, img) =>
-    {
-        let offscreen = getOffscreenPoint(),
-            scale = Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2);
-        bubbleQueue.push(new Bubble(characters[offset].name, characters[offset].animeStr, scale * 60 + 40, offscreen.x, offscreen.y, scale, img));
-    };
-
-    populateCharacterData((characters) =>
-    {
-        $("#loading-message").hide().text("Creating bubbles...").fadeIn();
-        
-        finalBubbleAmt = min(MAX_BUBBLES, characters.length);
-        for (let i = 0; i < finalBubbleAmt; i++)
-            (function (j)
-            {
-                if (!characters[j].picURL.includes("questionmark"))
-                    loadImage(characters[j].picURL, img =>
-                    {
-                        createBubble(characters, j, img);
-                    });
-                else
-                    createBubble(characters, j);
-
-            })(i);
-    });
-    //    $.when(populateCharacterData(characters)).then(() =>
-    //    {
-    //        console.log("Creating characters", characters.length);
-    //        for (let i = 0; i < MAX_BUBBLES; i++)
-    //            (function (j)
-    //            {
-    //                if (!characters[j].picURL.includes("questionmark"))
-    //                    loadImage(characters[j].picURL, img =>
-    //                    {
-    //                        createBubble(j, img);
-    //                        console.log("Created character", j);
-    //                    });
-    //                else
-    //                    createBubble(j);
-    //
-    //            })(i);
-    //    });
+    mouseDragging = true;
 }
