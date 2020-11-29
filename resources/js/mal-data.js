@@ -1,20 +1,19 @@
-function populateCharacterData(createBubblesFn)
+function getVAAndCharacterData(createCharacterBubblesFn, createVABubbleFn)
 {
     loadTopAnimes(topAnimes =>
     {
         $("#loading-message").hide().text("Retrieving voice actor...").fadeIn();
 
-        rankings = topAnimes;
-
         $.getJSON("resources/json/test_va_response.json", json_response =>
         {
-            let characters = createCharactersFromJSON(json_response, topAnimes);
-            createBubblesFn(characters);
+            let characters = parseCharactersFromJSON(json_response, topAnimes);
+            createCharacterBubblesFn(characters);
+            createVABubbleFn(parseVAFromJSON(json_response));
         });
     });
 }
 
-function createCharactersFromJSON(json, tops)
+function parseCharactersFromJSON(json, tops)
 {
     let ids = [],
         characters = []
@@ -29,6 +28,7 @@ function createCharactersFromJSON(json, tops)
         {
             name: switchFirstAndLast(roles.character.name),
             picURL: roles.character.image_url,
+            profileURL: roles.character.url,
             animeID: roles.anime.mal_id,
             characterID: roles.character.mal_id,
             animeStr: roles.anime.name,
@@ -45,25 +45,23 @@ function createCharactersFromJSON(json, tops)
     return characters;
 }
 
-function addToTops(jsonTops, tops)
+function parseVAFromJSON(json)
 {
-    for (const anime of jsonTops.top)
-    {
-        tops.push(
-        {
-            rank: anime.rank,
-            mal_id: anime.mal_id
-        });
-    }
+    return {
+        name: json.name,
+        picURL: json.image_url,
+        profileURL: json.url
+    };
 }
 
 function getRank(tops, malID)
 {
-    let found;
-    return (found = tops.find(anime =>
+    let found = tops.find(anime =>
     {
         return anime.mal_id === malID;
-    })) ? found.rank : found;
+    });
+    
+    return found ? found.rank : found;
 }
 
 function switchFirstAndLast(name)
