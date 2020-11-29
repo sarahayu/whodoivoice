@@ -32,6 +32,7 @@ function render()
     let expandingBubble;
     let bubblesWithText = [];
 
+    // 1.
     for (const bubble of bubbles)
     {
         if (bubble.animation.expanding)
@@ -48,12 +49,14 @@ function render()
     textAlign(CENTER, BASELINE);
     imageMode(CENTER);
 
+    // 2.
     for (const bubble of bubblesWithText)
     {
         bubble.draw(this, false);
         bubble.drawLabel(this);
     }
 
+    // 3.
     if (expandingBubble)
     {
         expandingBubble.draw(this, false);
@@ -64,51 +67,90 @@ function render()
 
 function createBubbles()
 {
-    let createBubble = (characters, offset, img) =>
-    {
-        let offscreen = getOffscreenPoint(),
-            scale = Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2),
-            character = characters[offset];
-        bubbleQueue.push(new Bubble(character/* + `${character.rank ? ' ' + character.rank.toString() : ''}`*/, scale * 60 + 40, offscreen.x, offscreen.y, scale, img));
-    };
-
-    populateCharacterData((characters) =>
-    {
-        $("#loading-message").hide().text("Creating bubbles...").fadeIn();
-        
-        finalBubbleAmt = min(MAX_BUBBLES, characters.length);
-        for (let i = 0; i < finalBubbleAmt; i++)
-            (function (j)
-            {
-                if (!characters[j].picURL.includes("questionmark"))
-                    loadImage(characters[j].picURL, img =>
-                    {
-                        createBubble(characters, j, img);
-                    });
-                else
-                    createBubble(characters, j);
-
-            })(i);
-    });
+    getVAAndCharacterData(createCharacterBubbles, createVABubble);
 }
 
 function addBubbles()
 {
     if (bubbleQueue.length != bubbles.length &&
         frameCount % INTRO_BUBBLE_EVERY_N_FRAME == 0)
+    {
         bubbles.push(bubbleQueue[bubbles.length]);
+    }
 }
 
 function slowdown()
 {
     velocityFactor = max(velocityFactor *= velocityDecreaseRate, 0.5);
 
-    if (bubbleQueue.length == finalBubbleAmt &&
+    if (!hasSlowedDown && bubbleQueue.length == finalBubbleAmt &&
         bubbleQueue.length == bubbles.length && velocityDecreaseRate != 0.998)
     {
+        hasSlowedDown = true;
         setTimeout(() =>
         {
             velocityDecreaseRate = 0.998;
         }, 2000);
     }
+}
+
+function createCharacterBubbles(characters)
+{
+    $("#loading-message").hide().text("Creating bubbles...").fadeIn();
+
+    finalBubbleAmt = min(MAX_BUBBLES, characters.length);
+    for (let i = 0; i < finalBubbleAmt; i++)
+        (function (j)
+        {
+            if (!characters[j].picURL.includes("questionmark"))
+                loadImage(characters[j].picURL, img =>
+                {
+                    bubbleQueue.push(createCharacterBubble(characters, j, img));
+                });
+            else
+                bubbleQueue.push(createCharacterBubble(characters, j));
+
+        })(i);
+    finalBubbleAmt += 1;
+}
+
+function createVABubble(voiceActor)
+{
+    loadImage(voiceActor.picURL, img =>
+    {
+        let offscreen = getOffscreenPoint();
+        bubbleQueue.push(new Bubble(
+        {
+            topStr: voiceActor.name,
+            bottomStr: "",
+            radius: 100,
+            x: offscreen.x,
+            y: offscreen.y,
+            textColor: 'white',
+            borderColor: 'black',
+            url: voiceActor.profileURL,
+            image: img,
+            relativeScale: 1
+        }));
+    });
+}
+
+function createCharacterBubble(characters, offset, img)
+{
+    let offscreen = getOffscreenPoint(),
+        scale = lerp(0, 5 / 6, Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2)),
+        character = characters[offset];
+    return new Bubble(
+    {
+        topStr: character.name,
+        bottomStr: character.animeStr,
+        radius: scale * 60 + 40,
+        x: offscreen.x,
+        y: offscreen.y,
+        textColor: 'black',
+        borderColor: 'white',
+        url: character.profileURL,
+        image: img,
+        relativeScale: scale
+    });
 }
