@@ -1,3 +1,19 @@
+function engineInitialize(voiceActor)
+{
+    velocityFactor = 1;
+    velocityDecreaseRate = 0.99995;
+
+    bubbleQueue = [];
+    bubbles = [];
+    bubbleGrabbed = false;
+    mouseDragging = false;
+    wasClickAction = false;
+    finalBubbleAmt = undefined;
+    hasSlowedDown = false;
+
+    createBubbles(voiceActor);
+}
+
 function update()
 {
     if (bubbleQueue.length == finalBubbleAmt && $("#loading-message").is(":visible"))
@@ -65,9 +81,9 @@ function render()
     pop();
 }
 
-function createBubbles()
+function createBubbles(voiceActor)
 {
-    getVAAndCharacterData(createCharacterBubbles, createVABubble);
+    getVAAndCharacterData(voiceActor, createCharacterBubbles, createVABubble);
 }
 
 function addBubbles()

@@ -1,10 +1,10 @@
-function getVAAndCharacterData(createCharacterBubblesFn, createVABubbleFn)
+function getVAAndCharacterData(vaMalID, createCharacterBubblesFn, createVABubbleFn)
 {
     loadTopAnimes(topAnimes =>
     {
         $("#loading-message").hide().text("Retrieving voice actor...").fadeIn();
 
-        $.getJSON("resources/json/test_va_response.json", json_response =>
+        $.getJSON(`https://api.jikan.moe/v3/person/${vaMalID}`, json_response =>
         {
             let characters = parseCharactersFromJSON(json_response, topAnimes);
             createCharacterBubblesFn(characters);
@@ -19,10 +19,25 @@ function parseCharactersFromJSON(json, tops)
         characters = []
     for (const roles of json.voice_acting_roles)
     {
-        // if character has appeared in a previous anime, skip
-        let id = roles.character.mal_id;
-        if (ids.includes(id)) continue;
-        else ids.push(id);
+        // if character has appeared in a previous anime, check this one to see if it is a more popular anime
+        // for example, Tanya Degurechaff is in Isekai Quartet and Youjo Senki, but Youjo Senki is going to be ranked
+        // while Isekai Quartet won't be
+        let charID = roles.character.mal_id,
+            pastID = characters.find(char =>
+            {
+                return char.characterID == charID;
+            });
+        if (pastID)
+        {
+            let possiblyMorePopular = getRank(tops, roles.anime.mal_id);
+            if (possiblyMorePopular && (!pastID.rank ||  (pastID.rank && possiblyMorePopular < pastID.rank)))
+            {
+                pastID.rank = possiblyMorePopular;
+                pastID.animeID = roles.anime.mal_id;
+                pastID.animeStr = roles.anime.name;
+            }
+            continue;
+        }
 
         characters.push(
         {
@@ -30,7 +45,7 @@ function parseCharactersFromJSON(json, tops)
             picURL: roles.character.image_url,
             profileURL: roles.character.url,
             animeID: roles.anime.mal_id,
-            characterID: roles.character.mal_id,
+            characterID: charID,
             animeStr: roles.anime.name,
             rank: getRank(tops, roles.anime.mal_id)
         });
@@ -60,7 +75,7 @@ function getRank(tops, malID)
     {
         return anime.mal_id === malID;
     });
-    
+
     return found ? found.rank : found;
 }
 

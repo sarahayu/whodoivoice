@@ -12,10 +12,8 @@ const MAX_BUBBLES = 55;
 let velocityFactor; // to prevent bubbles continuously moving after clumping together
 let velocityDecreaseRate = 0.99995;
 
-let bubbleCanvas;
 let bubbleQueue = [];
 let bubbles = [];
-let font;
 let bubbleGrabbed = false;
 let mouseDragging = false;
 let wasClickAction = false;
@@ -36,18 +34,12 @@ function setup()
     circleMask = createGraphics(200, 200);
     circleMask.circle(100, 100, 200);
 
-    gravity = windowHeight;
-    velocityFactor = 1.0;
-
-    bubbleCanvas = createCanvas(windowWidth, windowHeight);
-    bubbleCanvas.parent('bubble-area');
+    createCanvas(windowWidth, windowHeight).parent('bubble-area');
 
     frameRate(FPS);
     buffer = createGraphics(windowWidth, windowHeight);
     buffer.textAlign(CENTER, BASELINE);
     buffer.imageMode(CENTER);
-
-    createBubbles();
 }
 
 function draw()
