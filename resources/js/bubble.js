@@ -16,14 +16,14 @@ function Bubble(renderOpt)
         this.image.resize(MAX_RADIUS + RADIUS_EXPAND, MAX_RADIUS + RADIUS_EXPAND);
         this.image.mask(circleMask);
     }
-    
+
     // instantiate physics properties
     this.mass = renderOpt.radius * 1000;
     this.invMass = 1 / this.mass;
     this.location = createVector(renderOpt.x, renderOpt.y);
     this.velocity = createVector(0, 0);
-    
-    // instantiate animation props and misc
+
+    // instantiate animation props and mouse interaction stuff
     this.animation = new BubbleAnimation(renderOpt.radius);
     this.dragged = false;
     this.url = renderOpt.url;
@@ -63,68 +63,67 @@ Bubble.prototype.update = function ()
         window.open(this.url, '_blank');
 }
 
-Bubble.prototype.draw = function (ctx, batch)
+Bubble.prototype.drawBatch = function (ctx)
 {
     let imgDiameter = this.animation.apparentRadius * 2 - this.animation.stroke * 2;
 
-    if (batch)
-    {
-        // draw white border
-        ctx.noStroke();
-        ctx.fill(this.borderColor);
-        ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2);
+    // draw white border
+    ctx.noStroke();
+    ctx.fill(this.borderColor);
+    ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2);
 
-        // draw inner circle
-        if (this.image)
-        {
-            ctx.image(
-                this.image,
-                this.location.x,
-                this.location.y,
-                imgDiameter,
-                imgDiameter
-            );
-        }
-        else
-        {
-            ctx.fill('#FEEAE0');
-            ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
-        }
+    // draw inner circle
+    if (this.image)
+    {
+        ctx.image(
+            this.image,
+            this.location.x,
+            this.location.y,
+            imgDiameter,
+            imgDiameter
+        );
     }
     else
     {
-
-        // draw white border
-        ctx.push();
-        ctx.noStroke();
-        ctx.fill(this.borderColor);
-        ctx.drawingContext.shadowOffsetX = 2;
-        ctx.drawingContext.shadowOffsetY = 2;
-        ctx.drawingContext.shadowBlur = 8;
-        ctx.drawingContext.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2);
-        ctx.pop();
-
-        // draw inner circle
-        ctx.push();
-        ctx.noStroke();
-        if (this.image)
-        {
-            ctx.image(
-                this.image,
-                this.location.x,
-                this.location.y,
-                imgDiameter,
-                imgDiameter
-            );
-        }
-        else
-        {
-            ctx.fill('#FEEAE0');
-            ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
-        }
-        ctx.pop();
+        ctx.fill('#FEEAE0');
+        ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
     }
+}
+
+Bubble.prototype.drawWShadow = function (ctx, batch)
+{
+    let imgDiameter = this.animation.apparentRadius * 2 - this.animation.stroke * 2;
+
+    // draw white border
+    ctx.push();
+    ctx.noStroke();
+    ctx.fill(this.borderColor);
+    ctx.drawingContext.shadowOffsetX = 2;
+    ctx.drawingContext.shadowOffsetY = 2;
+    ctx.drawingContext.shadowBlur = 8;
+    ctx.drawingContext.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2);
+    ctx.pop();
+
+    // draw inner circle
+    ctx.push();
+    ctx.noStroke();
+    if (this.image)
+    {
+        ctx.image(
+            this.image,
+            this.location.x,
+            this.location.y,
+            imgDiameter,
+            imgDiameter
+        );
+    }
+    else
+    {
+        ctx.fill('#FEEAE0');
+        ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2);
+    }
+    ctx.pop();
 }
 
 Bubble.prototype.drawLabel = function (ctx)
@@ -144,7 +143,7 @@ Bubble.prototype.drawLabel = function (ctx)
     };
 
     drawCurvedText(textRenderOpt);
-    
+
     textRenderOpt.str = this.bottomStr;
     textRenderOpt.radius = -(this.animation.apparentRadius - (this.animation.stroke * lerp(0.2, 0.3, 1 - this.relativeScale)));
     textRenderOpt.style = BOLD;
