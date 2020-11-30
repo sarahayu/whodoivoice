@@ -1,3 +1,0 @@
-function VoiceActor(name, picUrl) {
-    
-}

@@ -29,6 +29,8 @@ if (typeof Object.freeze !== 'function')
 Object.freeze(Bubble.prototype);
 Object.freeze(BubbleAnimation.prototype);
 
+engineInitialize(6686);
+
 function setup()
 {
     circleMask = createGraphics(200, 200);

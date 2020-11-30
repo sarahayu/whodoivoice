@@ -56,11 +56,17 @@ function render()
         else if (bubble.animation.radius != bubble.animation.constRadius)
             bubblesWithText.push(bubble);
         else
-            bubble.draw(buffer, true);
+            bubble.drawBatch(buffer);
     }
 
+    push();
+    drawingContext.shadowOffsetX = 2;
+    drawingContext.shadowOffsetY = 2;
+    drawingContext.shadowBlur = 8;
+    drawingContext.shadowColor = 'rgba(0,0,0,0.5)';
     image(buffer, 0, 0);
-
+    pop();
+        
     push();
     textAlign(CENTER, BASELINE);
     imageMode(CENTER);
@@ -68,14 +74,14 @@ function render()
     // 2.
     for (const bubble of bubblesWithText)
     {
-        bubble.draw(this, false);
+        bubble.drawWShadow(this);
         bubble.drawLabel(this);
     }
 
     // 3.
     if (expandingBubble)
     {
-        expandingBubble.draw(this, false);
+        expandingBubble.drawWShadow(this);
         expandingBubble.drawLabel(this);
     }
     pop();
@@ -135,10 +141,9 @@ function createVABubble(voiceActor)
     loadImage(voiceActor.picURL, img =>
     {
         let offscreen = getOffscreenPoint();
-        bubbleQueue.push(new Bubble(
-        {
-            topStr: voiceActor.name,
-            bottomStr: "",
+        bubbleQueue.push(new Bubble({
+            topStr: voiceActor.japaneseName,
+            bottomStr: voiceActor.name,
             radius: 100,
             x: offscreen.x,
             y: offscreen.y,
@@ -156,8 +161,7 @@ function createCharacterBubble(characters, offset, img)
     let offscreen = getOffscreenPoint(),
         scale = lerp(0, 5 / 6, Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2)),
         character = characters[offset];
-    return new Bubble(
-    {
+    return new Bubble({
         topStr: character.name,
         bottomStr: character.animeStr,
         radius: scale * 60 + 40,

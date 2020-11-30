@@ -65,7 +65,8 @@ function parseVAFromJSON(json)
     return {
         name: json.name,
         picURL: json.image_url,
-        profileURL: json.url
+        profileURL: json.url,
+        japaneseName: json.family_name + " " + json.given_name
     };
 }
 

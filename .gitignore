@@ -2,4 +2,8 @@
 *.png
 *.log
 vendors/
-resources/js/minified/*.min.js
+resources/js/minified/
+resources/json/
+resources/img/
+.brackets
+cache-data.js
