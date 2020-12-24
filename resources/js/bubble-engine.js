@@ -87,9 +87,25 @@ function render()
     pop();
 }
 
-function createBubbles(voiceActor)
-{
-    getVAAndCharacterData(voiceActor, createCharacterBubbles, createVABubble);
+function createBubbles(vaMALID)
+{    
+    $("#loading-message").hide().text("Getting data...").fadeIn();
+
+    Promise.all([
+        firebase.database().ref("tops").once("value")
+            .then(response => response.val()),
+        $.getJSON(`https://api.jikan.moe/v3/person/${vaMALID}`)
+        ])
+        .then(([topAnimesData, characterData]) => {            
+            updateTops(topAnimesData)   
+
+            let characters = parseCharactersFromJSON(characterData, topAnimesData)
+            createCharacterBubbles(characters)
+            createVABubble(parseVAFromJSON(characterData))
+        })
+        .catch(err => {
+            console.log(err)
+        })
 }
 
 function addBubbles()
