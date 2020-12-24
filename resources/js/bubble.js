@@ -1,27 +1,51 @@
-function Bubble(renderOpt)
+function Bubble(renderOpt, app)
 {
     // instantiate visual elements ie label, picture
     this.topStr = trimMaxLength(renderOpt.topStr, 18);
     this.bottomStr = trimMaxLength(renderOpt.bottomStr, 18);
     this.radius = renderOpt.radius;
     this.constRadius = renderOpt.radius;
-    this.textColor = color(renderOpt.textColor);
-    this.borderColor = color(renderOpt.borderColor);
+    this.textColor = renderOpt.textColor;
+    this.borderColor = renderOpt.borderColor;
     this.relativeScale = renderOpt.relativeScale;
-    if (renderOpt.image)
-    {
-        let image = renderOpt.image;
-        let dim = min(image.width, image.height);
-        this.image = image.get(0, 0, dim, dim);
-        this.image.resize(MAX_RADIUS + RADIUS_EXPAND, MAX_RADIUS + RADIUS_EXPAND);
-        this.image.mask(circleMask);
-    }
+    
+    const circle = new PIXI.Graphics(),
+        texture = PIXI.Loader.shared.resources[renderOpt.textureID].texture
+        radius = this.radius,
+        radius_2 = radius * 2
+    circle.beginFill()
+    circle.drawCircle(texture.width / 2, texture.width / 2, texture.width / 2)
+    circle.endFill()
+    const buffer = new PIXI.Sprite(texture)
+    buffer.scale.set(radius_2 / texture.width)
+    buffer.addChild(buffer.mask = circle)
+
+    // this.borderSprite = new PIXI.Sprite(circleMask)
+    // this.borderSprite.anchor.set(0.5)
+    // this.borderSprite.width = radius * 2
+    // this.borderSprite.height = radius * 2
+
+    const croppedScaledTex = app.renderer.generateTexture(
+        buffer, PIXI.SCALE_MODES.NEAREST, 1, new PIXI.Rectangle(0, 0, radius_2, radius_2 )
+    )
+    this.sprite = new PIXI.Sprite(croppedScaledTex)
+    this.sprite.anchor.set(0.5)
+    this.sprite.position.set(renderOpt.x, renderOpt.y)
+    this.sprite.interactive = true
+    this.sprite.buttonMode = true
+    this.sprite.hitArea = new PIXI.Circle(0, 0, radius)
+
+    this.sprite
+        .on('pointerover', () => this.hover())
+        .on('pointerout', () => this.exit())
+    app.stage.addChild(this.sprite)
+    
 
     // instantiate physics properties
     this.mass = renderOpt.radius * 1000;
     this.invMass = 1 / this.mass;
-    this.location = createVector(renderOpt.x, renderOpt.y);
-    this.velocity = createVector(0, 0);
+    this.location = new Vector(renderOpt.x, renderOpt.y);
+    this.velocity = new Vector(0, 0);
 
     // instantiate animation props and mouse interaction stuff
     this.animation = new BubbleAnimation(renderOpt.radius);
@@ -29,38 +53,53 @@ function Bubble(renderOpt)
     this.url = renderOpt.url;
 }
 
+Bubble.prototype.hover = function() 
+{
+    this.sprite.scale.set(1.3)
+    this.radius = this.constRadius * 1.3
+}
+
+Bubble.prototype.exit = function() 
+{
+    this.sprite.scale.set(1)
+    this.radius = this.constRadius
+}
+
 Bubble.prototype.update = function ()
 {
-    // update animation stuff
-    let hovered = p5.Vector.sub(this.location, createVector(mouseX, mouseY)).magSq() <= this.radius * this.radius;
-    if (hovered)
-    {
-        if (mouseDragging) cursor("grabbing");
-        else cursor(HAND);
-    }
-    this.animation.expanding = (!bubbleGrabbed || this.dragged) && hovered;
-    this.animation.update(FRAME_LEN);
-    this.radius = this.animation.radius;
-    if (!bubbleGrabbed && hovered && mouseDragging)
-        this.dragged = bubbleGrabbed = true;
-    else if (!bubbleGrabbed)
-        this.dragged = false;
+    // // update animation stuff
+    // let hovered =  p5.Vector.sub(this.location, new Vector(mouseX, mouseY)).magSq() <= this.radius * this.radius;
+    // if (hovered)
+    // {
+    //     if (mouseDragging) cursor("grabbing");
+    //     else cursor(HAND);
+    // }
+    // this.animation.expanding = (!bubbleGrabbed || this.dragged) && hovered;
+    // this.animation.update(FRAME_LEN);
+    // this.radius = this.animation.radius;
+    // if (!bubbleGrabbed && hovered && mouseDragging)
+    //     this.dragged = bubbleGrabbed = true;
+    // else if (!bubbleGrabbed)
+    //     this.dragged = false;
 
     // update physics stuff
     if (!this.dragged)
     {
-        this.velocity.add(getGravVector(this.location));
+        this.velocity = this.velocity.add(getGravVector(this.sprite.position));
         // if it's offscreen, disregard velocityFactor slowdown to give it an opportunity to enter screenspace
-        if (onScreen(this.location, 0))
-            this.velocity.mult(velocityFactor);
-        this.location.add(p5.Vector.mult(this.velocity, FRAME_LEN));
+        if (onScreen(this.sprite.position, 0))
+            this.velocity = this.velocity.mult(velocityFactor);
+        const { x, y } = this.velocity.mult(FRAME_LEN)
+        // if (x 1 && y < 1) break
+        this.sprite.x += x
+        this.sprite.y += y
     }
     else
-        this.location = createVector(mouseX, mouseY);
+        this.sprite.position.set(mouseX, mouseY)
 
-    // did user click on this button?
-    if (hovered && wasClickAction && this.animation.percentOfFullSize() > 0.5)
-        window.open(this.url, '_blank');
+    // // did user click on this button?
+    // if (hovered && wasClickAction && this.animation.percentOfFullSize() > 0.5)
+    //     window.open(this.url, '_blank');
 }
 
 Bubble.prototype.drawBatch = function (ctx)
@@ -176,31 +215,30 @@ BubbleAnimation.prototype.percentOfFullSize = function ()
 
 function getGravVector(curLoc)
 {
-    let gravVector;
+    let gravVector
+    const windowWidth = window.innerWidth, windowHeight = window.innerHeight
     if (windowWidth > windowHeight)
     {
         const halfHeight = windowHeight / 2;
-        let leftPoint = createVector(halfHeight, halfHeight),
-            rightPoint = createVector(windowWidth - halfHeight, halfHeight);
+        let leftPoint = new Vector(halfHeight, halfHeight),
+            rightPoint = new Vector(windowWidth - halfHeight, halfHeight);
 
         if (curLoc.x >= leftPoint.x && curLoc.x <= rightPoint.x)
-            gravVector = createVector(0, halfHeight - curLoc.y);
+            gravVector = new Vector(0, halfHeight - curLoc.y);
         else
-            gravVector = p5.Vector.sub((curLoc.x > rightPoint.x) ? rightPoint : leftPoint, curLoc);
+            gravVector = ((curLoc.x > rightPoint.x) ? rightPoint : leftPoint).sub(curLoc);
     }
     else
     {
         const halfWidth = windowWidth / 2;
-        let topPoint = createVector(halfWidth, halfWidth),
-            bottomPoint = createVector(windowHeight - halfWidth, halfWidth);
+        let topPoint = new Vector(halfWidth, halfWidth),
+            bottomPoint = new Vector(windowHeight - halfWidth, halfWidth);
 
         if (curLoc.y <= topPoint.y && curLoc.y >= bottomPoint.y)
-            gravVector = createVector(0, halfWidth - curLoc.x);
+            gravVector = new Vector(0, halfWidth - curLoc.x);
         else
-            gravVector = p5.Vector.sub((curLoc.y > bottomPoint.y) ? bottomPoint : topPoint, curLoc);
+            gravVector = ((curLoc.y > bottomPoint.y) ? bottomPoint : topPoint).sub(curLoc);
     }
 
-    gravVector.normalize();
-    gravVector.mult(FRAME_LEN * 1000);
-    return gravVector;
+    return gravVector.normalize().mult(FRAME_LEN * 1000)
 }

@@ -1,4 +1,4 @@
-function engineInitialize(voiceActor)
+function engineInitialize(voiceActor, app)
 {
     velocityFactor = 1;
     velocityDecreaseRate = 0.99995;
@@ -11,7 +11,7 @@ function engineInitialize(voiceActor)
     finalBubbleAmt = undefined;
     hasSlowedDown = false;
 
-    createBubbles(voiceActor);
+    createBubbles(voiceActor, app)
 }
 
 function update()
@@ -87,7 +87,7 @@ function render()
     pop();
 }
 
-function createBubbles(vaMALID)
+function createBubbles(vaMALID, app)
 {    
     $("#loading-message").hide().text("Getting data...").fadeIn();
 
@@ -96,12 +96,43 @@ function createBubbles(vaMALID)
             .then(response => response.val()),
         $.getJSON(`https://api.jikan.moe/v3/person/${vaMALID}`)
         ])
-        .then(([topAnimesData, characterData]) => {            
+        .then(([topAnimesData, vaData]) => {            
             updateTops(topAnimesData)   
 
-            let characters = parseCharactersFromJSON(characterData, topAnimesData)
-            createCharacterBubbles(characters)
-            createVABubble(parseVAFromJSON(characterData))
+            const characters = parseCharactersFromJSON(vaData, topAnimesData)
+            const voiceActor = parseVAFromJSON(vaData)
+            
+            $("#loading-message").hide().text("Creating bubbles...").fadeIn()
+
+            const bubbleResourceCalls = []
+
+            finalBubbleAmt = Math.min(MAX_BUBBLES, characters.length);
+            for (let i = 0; i < finalBubbleAmt; i++)
+                bubbleResourceCalls.push({
+                    name: characters[i].characterID.toString(),
+                    url: characters[i].picURL,
+                    onComplete: () => {
+                        bubbleQueue.push(createCharacterBubble(characters, i, null, app))
+                    }
+                })
+
+            bubbleResourceCalls.push({
+                name: voiceActor.name,
+                url: voiceActor.picURL,
+                onComplete: () => {
+                    bubbleQueue.push(createVABubble(voiceActor, app))
+                }
+            })
+
+            const loader = PIXI.Loader.shared
+
+            loader
+                .add(bubbleResourceCalls)
+                .load(() => console.log('Done!'))
+            
+            loader.onStart.add(() => console.log('Starting...'))
+
+            finalBubbleAmt += 1;
         })
         .catch(err => {
             console.log(err)
@@ -119,7 +150,7 @@ function addBubbles()
 
 function slowdown()
 {
-    velocityFactor = max(velocityFactor *= velocityDecreaseRate, 0.5);
+    velocityFactor = Math.max(velocityFactor *= velocityDecreaseRate, 0.3);
 
     if (!hasSlowedDown && bubbleQueue.length == finalBubbleAmt &&
         bubbleQueue.length == bubbles.length && velocityDecreaseRate != 0.998)
@@ -127,7 +158,8 @@ function slowdown()
         hasSlowedDown = true;
         setTimeout(() =>
         {
-            velocityDecreaseRate = 0.998;
+            console.log('slowed down')
+            velocityDecreaseRate = 0.995
         }, 2000);
     }
 }
@@ -136,57 +168,69 @@ function createCharacterBubbles(characters)
 {
     $("#loading-message").hide().text("Creating bubbles...").fadeIn();
 
+    // const characterResourceCalls = characters.map(character => ({
+    //     name: character.characterID,
+    //     url: character.picURL,
+    //     onComplete: () => createCharacterBubble(characters, )
+    // }))
+
+    const bubbleResourceCalls = []
+
     finalBubbleAmt = min(MAX_BUBBLES, characters.length);
     for (let i = 0; i < finalBubbleAmt; i++)
-        (function (j)
-        {
-            if (!characters[j].picURL.includes("questionmark"))
-                loadImage(characters[j].picURL, img =>
-                {
-                    bubbleQueue.push(createCharacterBubble(characters, j, img));
-                });
-            else
-                bubbleQueue.push(createCharacterBubble(characters, j));
+        bubbleResourceCalls.push({
+            name: characters[i].characterID,
+            url: characters[i].picURL,
+            onComplete: () => createCharacterBubble(characters, i, null)
+        })
 
-        })(i);
+        // (function (j)
+        // {
+        //     if (!characters[j].picURL.includes("questionmark"))
+        //         loadImage(characters[j].picURL, img =>
+        //         {
+        //             bubbleQueue.push(createCharacterBubble(characters, j, img));
+        //         });
+        //     else
+        //         bubbleQueue.push(createCharacterBubble(characters, j));
+
+        // })(i);
     finalBubbleAmt += 1;
 }
 
-function createVABubble(voiceActor)
+function createVABubble(voiceActor, app)
 {
-    loadImage(voiceActor.picURL, img =>
-    {
-        let offscreen = getOffscreenPoint();
-        bubbleQueue.push(new Bubble({
-            topStr: voiceActor.japaneseName,
-            bottomStr: voiceActor.name,
-            radius: 100,
-            x: offscreen.x,
-            y: offscreen.y,
-            textColor: 'white',
-            borderColor: 'black',
-            url: voiceActor.profileURL,
-            image: img,
-            relativeScale: 1
-        }));
-    });
+    let { x, y } = getOffscreenPoint();
+    return new Bubble({
+        topStr: voiceActor.japaneseName,
+        bottomStr: voiceActor.name,
+        textureID: voiceActor.name,
+        radius: 100,
+        x: x,
+        y: y,
+        textColor: 'white',
+        borderColor: 'black',
+        url: voiceActor.profileURL,
+        relativeScale: 1
+    }, app)
 }
 
-function createCharacterBubble(characters, offset, img)
+function createCharacterBubble(characters, offset, img, app)
 {
-    let offscreen = getOffscreenPoint(),
+    let { x, y } = getOffscreenPoint(),
         scale = lerp(0, 5 / 6, Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2)),
         character = characters[offset];
     return new Bubble({
         topStr: character.name,
         bottomStr: character.animeStr,
+        textureID: character.characterID.toString(),
         radius: scale * 60 + 40,
-        x: offscreen.x,
-        y: offscreen.y,
+        x: x,
+        y: y,
         textColor: 'black',
         borderColor: 'white',
         url: character.profileURL,
         image: img,
         relativeScale: scale
-    });
+    }, app);
 }

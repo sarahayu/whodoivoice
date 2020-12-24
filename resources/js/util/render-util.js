@@ -1,19 +1,3 @@
-function getOffscreenPoint()
-{
-    let point;
-    do {
-        point = createVector(Math.random() * (windowWidth + 1000) - 500, Math.random() * (windowHeight + 1000) - 500);
-    }
-    while (onScreen(point, 100));
-    return point;
-}
-
-function onScreen(point, border)
-{
-    return point.x >= -border && point.x <= windowWidth + border &&
-        point.y >= -border && point.y <= windowHeight + border;
-}
-
 function drawCurvedText(textOpts)
 {
     textOpts.ctx.textFont('Courier New', textOpts.scale);
@@ -41,9 +25,4 @@ function drawCurvedText(textOpts)
 
         arcLength += w / 2;
     }
-}
-
-function trimMaxLength(str, max)
-{
-    return str.length > max ? str.substring(0, max - 3).trim() + "..." : str;
 }
