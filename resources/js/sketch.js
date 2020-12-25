@@ -67,9 +67,6 @@ jQuery(function() {
     app.ticker.add(dt => {
         frameCount++
 
-        if (bubbleQueue.length == finalBubbleAmt && $("#loading-message").is(":visible"))
-            $("#loading-message").fadeOut()
-    
         addBubbles()
         slowdown()
     
