@@ -48,3 +48,20 @@ Vector.prototype.normalize = function() {
 Vector.prototype.dot = function(other) {
     return this.x * other.x + this.y * other.y
 }
+
+Vector.prototype.correct = function() {
+    const newVec = this
+    if (Math.abs(newVec.x) < 0.5) newVec.x = 0
+    if (Math.abs(newVec.y) < 0.5) newVec.y = 0
+    return newVec
+}
+
+
+// // round down small increments so pixijs doesn't jitter
+// Vector.prototype.correct = function() {
+//     const newVec = this
+//     for (const w in newVec)
+//         if (Math.abs(newVec[w]) < 0.5) 
+//             newVec[w] = 0
+//     return newVec
+// }

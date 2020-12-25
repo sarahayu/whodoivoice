@@ -105,6 +105,14 @@ function createBubbles(vaMALID, app)
             $("#loading-message").hide().text("Creating bubbles...").fadeIn()
 
             const bubbleResourceCalls = []
+            
+            bubbleResourceCalls.push({
+                name: voiceActor.name,
+                url: voiceActor.picURL,
+                onComplete: () => {
+                    bubbleQueue.push(createVABubble(voiceActor, app))
+                }
+            })
 
             finalBubbleAmt = Math.min(MAX_BUBBLES, characters.length);
             for (let i = 0; i < finalBubbleAmt; i++)
@@ -116,13 +124,6 @@ function createBubbles(vaMALID, app)
                     }
                 })
 
-            bubbleResourceCalls.push({
-                name: voiceActor.name,
-                url: voiceActor.picURL,
-                onComplete: () => {
-                    bubbleQueue.push(createVABubble(voiceActor, app))
-                }
-            })
 
             const loader = PIXI.Loader.shared
 
@@ -150,7 +151,7 @@ function addBubbles()
 
 function slowdown()
 {
-    velocityFactor = Math.max(velocityFactor *= velocityDecreaseRate, 0.3);
+    velocityFactor = Math.max(velocityFactor *= velocityDecreaseRate, 0.5);
 
     if (!hasSlowedDown && bubbleQueue.length == finalBubbleAmt &&
         bubbleQueue.length == bubbles.length && velocityDecreaseRate != 0.998)
@@ -159,7 +160,7 @@ function slowdown()
         setTimeout(() =>
         {
             console.log('slowed down')
-            velocityDecreaseRate = 0.995
+            velocityDecreaseRate = 0.998
         }, 2000);
     }
 }
