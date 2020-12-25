@@ -1,40 +1,15 @@
 function Bubble(renderOpt, app)
 {
+    let _this = this
     // instantiate visual elements ie label, picture
     this.topStr = trimMaxLength(renderOpt.topStr, 18)
     this.bottomStr = trimMaxLength(renderOpt.bottomStr, 18)
     this.radius = renderOpt.radius
-    this.constRadius = renderOpt.radius
     this.textColor = renderOpt.textColor
     this.borderColor = renderOpt.borderColor
     this.relativeScale = renderOpt.relativeScale
-    
-    const circle = new PIXI.Graphics(),
-        texture = PIXI.Loader.shared.resources[renderOpt.textureID].texture
-        radius = this.radius,
-        buffer = new PIXI.Sprite(texture),
-        halfWidth = texture.width / 2
-    circle.beginFill()
-    circle.drawCircle(texture.width / 2, texture.width / 2, texture.width / 2)
-    circle.endFill()
-    buffer.mask = circle
-    
-    const croppedScaledTex = app.renderer.generateTexture(
-        buffer, PIXI.SCALE_MODES.LINEAR, 1, new PIXI.Rectangle(0, 0, texture.width, texture.width)
-    )
-    this.sprite = new PIXI.Sprite(croppedScaledTex)
-    this.sprite.anchor.set(0.5)
-    this.sprite.hitArea = new PIXI.Circle(0, 0, texture.width / 2)
-    this.sprite.width = this.sprite.height = radius * 2
-    this.sprite.position.set(renderOpt.x, renderOpt.y)
-    this.sprite.interactive = true
-    this.sprite.buttonMode = true
 
-    this.sprite
-        .on('pointerover', () => this.hover())
-        .on('pointerout', () => this.exit())
-    app.stage.addChild(this.sprite)
-    
+    createBubbleSprite()
 
     // instantiate physics properties
     this.mass = renderOpt.radius * 1000
@@ -43,25 +18,84 @@ function Bubble(renderOpt, app)
     this.velocity = new Vector(0, 0)
 
     // instantiate animation props and mouse interaction stuff
-    this.animation = new BubbleAnimation(renderOpt.radius)
+    this.animation = new BubbleAnimation(this)
     this.dragged = false
     this.url = renderOpt.url
+
+    function createBubbleSprite()
+    {    
+        const radius = _this.radius        
+    
+        const circle = createCircleGraphic(LARGEST_RADIUS, renderOpt.borderColor)
+        _this.border = new PIXI.Sprite(app.renderer.generateTexture(circle))
+        _this.border.anchor.set(0.5)
+        _this.border.hitArea = new PIXI.Circle(0, 0, LARGEST_RADIUS)
+    
+        _this.imgSprite = createImgSprite()
+        _this.imgSprite.anchor.set(0.5)
+        _this.border.addChild(_this.imgSprite)
+        _this.border.width = _this.border.height = radius * 2
+        _this.border.position.set(renderOpt.x, renderOpt.y)
+        _this.border.interactive = true
+        _this.border.buttonMode = true
+    
+        _this.border
+            .on('pointerover', () => _this.hover())
+            .on('pointerout', () => _this.exit())
+        app.stage.addChild(_this.border)
+    }
+
+    function createImgSprite()
+    {
+        const circle = createCircleGraphic(LARGEST_RADIUS, 0xfeeae0),
+            resource = PIXI.Loader.shared.resources[renderOpt.textureID]
+
+        if (resource)
+        {
+            const texture = resource.texture,
+                buffer = new PIXI.Sprite(texture)
+
+            buffer.mask = circle
+            buffer.scale.set(LARGEST_DIAMETER / texture.width)
+            
+            const croppedScaledTex = app.renderer.generateTexture(
+                buffer, PIXI.SCALE_MODES.LINEAR, 1, new PIXI.Rectangle(0, 0, LARGEST_DIAMETER, LARGEST_DIAMETER)
+            )
+
+            return new PIXI.Sprite(croppedScaledTex)
+        }
+        return new PIXI.Sprite(app.renderer.generateTexture(circle))
+    }
+
+    function createCircleGraphic(radius, color)
+    {
+        const circle = new PIXI.Graphics()
+        circle.beginFill(color)
+        circle.drawCircle(radius, radius, radius)
+        circle.endFill()
+        return circle
+    }
 }
 
 Bubble.prototype.hover = function() 
 {
-    // this.sprite.scale.set(1.3)
+    this.animation.expanding = true
+    this.border.zIndex = 2
+    // this.imgSprite.scale.set(1.3)
     // this.radius = this.constRadius * 1.3
 }
 
 Bubble.prototype.exit = function() 
 {
-    // this.sprite.scale.set(1)
+    this.animation.expanding = false
+    this.border.zIndex = 1
+    // this.imgSprite.scale.set(1)
     // this.radius = this.constRadius
 }
 
-Bubble.prototype.update = function (dt)
+Bubble.prototype.update = function (dt, velocityFactor)
 {
+
     // // update animation stuff
     // let hovered =  p5.Vector.sub(this.location, new Vector(mouseX, mouseY)).magSq() <= this.radius * this.radius
     // if (hovered)
@@ -70,7 +104,7 @@ Bubble.prototype.update = function (dt)
     //     else cursor(HAND)
     // }
     // this.animation.expanding = (!bubbleGrabbed || this.dragged) && hovered
-    // this.animation.update(FRAME_LEN)
+    this.animation.update(dt)
     // this.radius = this.animation.radius
     // if (!bubbleGrabbed && hovered && mouseDragging)
     //     this.dragged = bubbleGrabbed = true
@@ -80,134 +114,53 @@ Bubble.prototype.update = function (dt)
     // update physics stuff
     if (!this.dragged)
     {
-        this.velocity = this.velocity.add(getGravVector(this.sprite.position))
+        this.velocity = this.velocity.add(getGravVector(this.border.position).mult(FRAME_LEN * dt))
         // if it's offscreen, disregard velocityFactor slowdown to give it an opportunity to enter screenspace
-        if (onScreen(this.sprite.position, 0))
+        if (onScreen(this.border.position, 0))
             this.velocity = this.velocity.mult(velocityFactor)
-        const { x, y } = this.velocity.mult(FRAME_LEN)
-        // if (x 1 && y < 1) break
+        const { x, y } = this.velocity
 
-        this.sprite.x += x
-        this.sprite.y += y
-
+        this.border.x += x
+        this.border.y += y
     }
     else
-        this.sprite.position.set(mouseX, mouseY)
+        this.imgSprite.position.set(mouseX, mouseY)
 
     // // did user click on this button?
     // if (hovered && wasClickAction && this.animation.percentOfFullSize() > 0.5)
     //     window.open(this.url, '_blank')
 }
 
-Bubble.prototype.drawBatch = function (ctx)
+Bubble.prototype.destroy = function()
 {
-    let imgDiameter = this.animation.apparentRadius * 2 - this.animation.stroke * 2
-
-    // draw white border
-    ctx.noStroke()
-    ctx.fill(this.borderColor)
-    ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2)
-
-    // draw inner circle
-    if (this.image)
-    {
-        ctx.image(
-            this.image,
-            this.location.x,
-            this.location.y,
-            imgDiameter,
-            imgDiameter
-        )
-    }
-    else
-    {
-        ctx.fill('#FEEAE0')
-        ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2)
-    }
+    this.border.destroy(true)
 }
 
-Bubble.prototype.drawWShadow = function (ctx, batch)
+function BubbleAnimation(bubble)
 {
-    let imgDiameter = this.animation.apparentRadius * 2 - this.animation.stroke * 2
-
-    // draw white border
-    ctx.push()
-    ctx.noStroke()
-    ctx.fill(this.borderColor)
-    ctx.drawingContext.shadowOffsetX = 2
-    ctx.drawingContext.shadowOffsetY = 2
-    ctx.drawingContext.shadowBlur = 8
-    ctx.drawingContext.shadowColor = 'rgba(0,0,0,0.5)'
-    ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2)
-    ctx.pop()
-
-    // draw inner circle
-    ctx.push()
-    ctx.noStroke()
-    if (this.image)
-    {
-        ctx.image(
-            this.image,
-            this.location.x,
-            this.location.y,
-            imgDiameter,
-            imgDiameter
-        )
-    }
-    else
-    {
-        ctx.fill('#FEEAE0')
-        ctx.ellipse(this.location.x, this.location.y, this.animation.apparentRadius * 2 - this.animation.stroke * 2)
-    }
-    ctx.pop()
-}
-
-Bubble.prototype.drawLabel = function (ctx)
-{
-    let alphaColor = this.textColor
-    alphaColor.setAlpha(this.animation.percentOfFullSize() * 255)
-
-    let textRenderOpt = {
-        str: this.topStr,
-        radius: this.animation.apparentRadius - this.animation.stroke + (this.animation.stroke * lerp(0.2, 0.3, 1 - this.relativeScale)),
-        scale: lerp(0.7, 0.8, this.relativeScale) * this.animation.stroke,
-        x: this.location.x,
-        y: this.location.y,
-        offset: this.animation.expanding ? this.animation.percentOfFullSize() - 1 : 1 - this.animation.percentOfFullSize(),
-        color: alphaColor,
-        ctx: ctx
-    }
-
-    drawCurvedText(textRenderOpt)
-
-    textRenderOpt.str = this.bottomStr
-    textRenderOpt.radius = -(this.animation.apparentRadius - (this.animation.stroke * lerp(0.2, 0.3, 1 - this.relativeScale)))
-    textRenderOpt.style = BOLD
-
-    drawCurvedText(textRenderOpt)
-}
-
-function BubbleAnimation(radius)
-{
-    this.radius = radius
-    this.apparentRadius = radius
-    this.stroke = 10 * (this.apparentRadius / 100)
-    this.constRadius = radius
+    this.bubble = bubble
+    this.constRadius = bubble.radius
     this.expanding = false
 }
 
 BubbleAnimation.prototype.update = function (deltaTime)
 {
-    this.radius = min(
-        max(this.radius + (this.expanding ? 1 : -1) * deltaTime * 50, this.constRadius),
+    // lots of math DONT TOUCH THIS
+    this.bubble.radius = Math.min(
+        Math.max(this.bubble.radius + (this.expanding ? 1 : -1) * deltaTime * FRAME_LEN * 50, this.constRadius),
         this.constRadius + 10)
-    this.apparentRadius = this.radius + (this.radius - this.constRadius) * 5
-    this.stroke = lerp(MAX_STROKE * (this.apparentRadius / (MAX_RADIUS + RADIUS_EXPAND)), HOVER_STROKE, this.percentOfFullSize())
+    const apparentRadius = this.bubble.radius + (this.bubble.radius - this.constRadius) * 5
+    this.bubble.border.hitArea = new PIXI.Circle(0, 0, this.bubble.radius * LARGEST_RADIUS / apparentRadius)
+    this.bubble.border.width = this.bubble.border.height = apparentRadius * 2
+    const stroke = lerp(MAX_STROKE * (apparentRadius / (MAX_RADIUS + RADIUS_EXPAND)), HOVER_STROKE, this.percentOfFullSize())
+    this.bubble.imgSprite.scale.set((apparentRadius - stroke) / apparentRadius)
+    if (this.percentOfFullSize() == 0)
+        this.bubble.border.zIndex = 0
 }
 
 BubbleAnimation.prototype.percentOfFullSize = function ()
 {
-    return (this.radius - this.constRadius) / RADIUS_EXPAND
+    return (this.bubble.radius - this.constRadius) / RADIUS_EXPAND
 }
 
 function getGravVector(curLoc)
@@ -237,5 +190,5 @@ function getGravVector(curLoc)
             gravVector = ((curLoc.y > bottomPoint.y) ? bottomPoint : topPoint).sub(curLoc)
     }
 
-    return gravVector.normalize().mult(FRAME_LEN * 1000)
+    return gravVector.normalize().mult(20)
 }
