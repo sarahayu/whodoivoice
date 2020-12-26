@@ -26,21 +26,25 @@ function Bubble(renderOpt, app)
     {    
         const radius = _this.radius        
     
-        const circle = createCircleGraphic(LARGEST_RADIUS, renderOpt.borderColor)
-        _this.border = new PIXI.Sprite(app.renderer.generateTexture(circle))
-        _this.border.anchor.set(0.5)
-        _this.border.hitArea = new PIXI.Circle(0, 0, LARGEST_RADIUS)
+        // const circle = createCircleGraphic(LARGEST_RADIUS, renderOpt.borderColor)
+        // _this.border = new PIXI.Sprite(app.renderer.generateTexture(circle))
+        _this.borderCenter = new Vector(LARGEST_RADIUS, LARGEST_RADIUS)
+        _this.border = createCircleGraphic(LARGEST_RADIUS, renderOpt.borderColor)
+        // _this.border.anchor.set(0.5)
+        _this.border.hitArea = new PIXI.Circle(LARGEST_RADIUS, LARGEST_RADIUS, LARGEST_RADIUS)
     
         _this.imgSprite = createImgSprite()
+        _this.imgSprite.position.set(LARGEST_RADIUS, LARGEST_RADIUS)
         _this.imgSprite.anchor.set(0.5)
         _this.border.addChild(_this.imgSprite)
-        _this.border.width = _this.border.height = radius * 2
-        _this.border.position.set(renderOpt.x, renderOpt.y)
+        _this.setBorderSize(radius * 2)
+        _this.setBorderPos(renderOpt.x, renderOpt.y)
         _this.border.interactive = true
         _this.border.buttonMode = true
     
         _this.border
             .on('pointerover', () => _this.hover())
+            .on('pointerdown', () => _this.click())
             .on('pointerout', () => _this.exit())
         app.stage.addChild(_this.border)
     }
@@ -48,7 +52,8 @@ function Bubble(renderOpt, app)
     function createImgSprite()
     {
         const circle = createCircleGraphic(LARGEST_RADIUS, 0xfeeae0),
-            resource = PIXI.Loader.shared.resources[renderOpt.textureID]
+            // resource = PIXI.Loader.shared.resources[renderOpt.textureID]
+            resource = PIXI.Loader.shared.resources.splash
 
         if (resource)
         {
@@ -67,30 +72,64 @@ function Bubble(renderOpt, app)
         return new PIXI.Sprite(app.renderer.generateTexture(circle))
     }
 
-    function createCircleGraphic(radius, color)
+    function createCircleGraphic(radius, color, x, y)
     {
+        if (x === void 0) x = y = radius
         const circle = new PIXI.Graphics()
         circle.beginFill(color)
-        circle.drawCircle(radius, radius, radius)
+        circle.drawCircle(x, y, radius)
         circle.endFill()
         return circle
     }
 }
 
+Bubble.prototype.setBorderSize = function(diameter)
+{
+    // new diameter is same as old one
+    if (diameter === this.borderCenter.x * 2) return
+
+    const { x, y } = this.getBorderPos()
+    this.border.width = this.border.height = diameter
+    this.borderCenter.x = this.borderCenter.y = diameter / 2
+    this.setBorderPos(x, y)
+}
+
+Bubble.prototype.setBorderPos = function(x, y)
+{
+    const center = this.borderCenter.x
+    this.border.position.set(x - center, y - center)
+}
+
+Bubble.prototype.getBorderPos = function()
+{
+    return new Vector(this.border.position).add(this.borderCenter)
+}
+
+// // here to combine setBorderSize and setBorderPos to decrease calls to position.set
+// Bubble.prototype.setBorderSizePos = function(x, y, diameter)
+// {
+//     this.border.width = this.border.height = diameter
+//     this.setBorderPos(x, y)
+// }
+
 Bubble.prototype.hover = function() 
 {
     this.animation.expanding = true
     this.border.zIndex = 2
-    // this.imgSprite.scale.set(1.3)
-    // this.radius = this.constRadius * 1.3
+}
+
+Bubble.prototype.click = function() 
+{
+    if (this.animation.percentOfFullSize() < 0.5)
+        this.hover()
+    else
+        window.open(this.url, '_blank')
 }
 
 Bubble.prototype.exit = function() 
 {
     this.animation.expanding = false
     this.border.zIndex = 1
-    // this.imgSprite.scale.set(1)
-    // this.radius = this.constRadius
 }
 
 Bubble.prototype.update = function (dt, velocityFactor)
@@ -114,14 +153,13 @@ Bubble.prototype.update = function (dt, velocityFactor)
     // update physics stuff
     if (!this.dragged)
     {
-        this.velocity = this.velocity.add(getGravVector(this.border.position).mult(FRAME_LEN * dt))
+        const borderCenter = this.getBorderPos()
+        this.velocity = this.velocity.add(getGravVector(borderCenter).mult(FRAME_LEN * dt))
         // if it's offscreen, disregard velocityFactor slowdown to give it an opportunity to enter screenspace
-        if (onScreen(this.border.position, 0))
+        if (onScreen(borderCenter, 0))
             this.velocity = this.velocity.mult(velocityFactor)
-        const { x, y } = this.velocity
-
-        this.border.x += x
-        this.border.y += y
+        const { x, y } =  borderCenter.add(this.velocity)
+        this.setBorderPos(x, y)
     }
     else
         this.imgSprite.position.set(mouseX, mouseY)
@@ -150,7 +188,8 @@ BubbleAnimation.prototype.update = function (deltaTime)
         Math.max(this.bubble.radius + (this.expanding ? 1 : -1) * deltaTime * FRAME_LEN * 50, this.constRadius),
         this.constRadius + 10)
     const apparentRadius = this.bubble.radius + (this.bubble.radius - this.constRadius) * 5
-    this.bubble.border.hitArea = new PIXI.Circle(0, 0, this.bubble.radius * LARGEST_RADIUS / apparentRadius)
+    this.bubble.border.hitArea.radius = this.bubble.radius * LARGEST_RADIUS / apparentRadius
+    this.bubble.setBorderSize(apparentRadius * 2)
     this.bubble.border.width = this.bubble.border.height = apparentRadius * 2
     const stroke = lerp(MAX_STROKE * (apparentRadius / (MAX_RADIUS + RADIUS_EXPAND)), HOVER_STROKE, this.percentOfFullSize())
     this.bubble.imgSprite.scale.set((apparentRadius - stroke) / apparentRadius)

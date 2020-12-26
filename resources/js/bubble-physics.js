@@ -2,7 +2,7 @@
 
 function resolveCollisionVelocity(bubble1, bubble2)
 {
-    let normal = new Vector(bubble2.border.position).sub(bubble1.border.position)
+    let normal = bubble2.getBorderPos().sub(bubble1.getBorderPos())
     let distSquared = normal.magSq(),
         radiusAdded = bubble1.radius + bubble2.radius;
 
@@ -38,7 +38,7 @@ function resolveCollisionVelocity(bubble1, bubble2)
 
 function correctPositions(bubble1, bubble2)
 {
-    let normal = new Vector(bubble2.border.position).sub(bubble1.border.position)
+    let normal = bubble2.getBorderPos().sub(bubble1.getBorderPos())
     let distSquared = normal.magSq(),
         radiusAdded = bubble1.radius + bubble2.radius;
 
@@ -63,12 +63,14 @@ function correctPositions(bubble1, bubble2)
     let correction = normal.mult(percent * Math.max(penetration - slop, 0))
 
     {
-        let { x, y } = new Vector(bubble1.border.position).sub(correction.mult(0.5))
-        bubble1.border.position.set(x, y)
+        let { x, y } = bubble1.getBorderPos().sub(correction.mult(0.5))
+        bubble1.setBorderPos(x, y)
+        // bubble1.border.position.set(x, y)
     }
 
     {
-        let { x, y } = new Vector(bubble2.border.position).add(correction.mult(0.5))
-        bubble2.border.position.set(x, y)
+        let { x, y } = bubble2.getBorderPos().add(correction.mult(0.5))
+        bubble2.setBorderPos(x, y)
+        // bubble2.border.position.set(x, y)
     }
 }

@@ -18,7 +18,8 @@ function Application()
             width: window.innerWidth,
             height: window.innerHeight,
             autoDensity: true,
-            transparent: true
+            transparent: true,
+            antialias: true
         })
     
         _this.app.renderer.view.style.position = 'absolute'
@@ -63,7 +64,9 @@ function Application()
     {
         (function addBubble()
         {
-            if (_this.bubbleQueue.length == _this.bubbles.length)
+            if (_this.bubbleQueue.length == 0)
+                setTimeout(addBubble, 1000)
+            else if (_this.bubbleQueue.length == _this.bubbles.length)
                 setTimeout(() =>
                 {
                     console.log('slowed down')

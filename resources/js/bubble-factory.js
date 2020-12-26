@@ -16,37 +16,48 @@ function createBubbles(vaMALID, bubbleQueue, app)
 
             const bubbleResourceCalls = []
 
-            if (!voiceActor.picURL.includes('questionmark'))
-                bubbleResourceCalls.push({
-                    name: voiceActor.name,
-                    url: voiceActor.picURL,
-                    onComplete: () => {
-                        bubbleQueue.push(createVABubble(voiceActor, app))
-                    }
-                })
-            else
-                bubbleQueue.push(createVABubble(voiceActor, app))
+            // if (!voiceActor.picURL.includes('questionmark'))
+            //     bubbleResourceCalls.push({
+            //         name: voiceActor.name,
+            //         url: voiceActor.picURL,
+            //         onComplete: () => {
+            //             bubbleQueue.push(createVABubble(voiceActor, app))
+            //         }
+            //     })
+            // else
+            //     bubbleQueue.push(createVABubble(voiceActor, app))
 
-            finalBubbleAmt = Math.min(MAX_BUBBLES, characters.length)
-            for (let i = 0; i < finalBubbleAmt; i++)
-                if (!characters[i].picURL.includes('questionmark'))
-                    bubbleResourceCalls.push({
-                        name: characters[i].characterID.toString(),
-                        url: characters[i].picURL,
-                        onComplete: () => {
-                            bubbleQueue.push(createCharacterBubble(characters, i, app))
-                        }
-                    })
-                else
-                    bubbleQueue.push(createCharacterBubble(characters, i, app))
+            const finalBubbleAmt = Math.min(MAX_BUBBLES, characters.length)
+            // for (let i = 0; i < finalBubbleAmt; i++)
+            // {
+            //     if (!characters[i].picURL.includes('questionmark'))
+            //         bubbleResourceCalls.push({
+            //             name: characters[i].characterID.toString(),
+            //             url: characters[i].picURL,
+            //             onComplete: () => {
+            //                 console.log('asdf')
+            //                 bubbleQueue.push(createCharacterBubble(characters, i, app))
+            //             }
+            //         })
+            //     else
+            //         bubbleQueue.push(createCharacterBubble(characters, i, app))
+            // }
 
 
+            // PIXI.Loader.shared
+            //     .add(bubbleResourceCalls)
+            //     .load(() => $('#loading-message').fadeOut())
             PIXI.Loader.shared
-                .add(bubbleResourceCalls)
-                .load(() => $('#loading-message').fadeOut())
-            
-
-            finalBubbleAmt += 1
+                .add('splash', 'resources/img/image.png')
+                .load(() => {
+                    bubbleQueue.push(createVABubble(voiceActor, app))
+                    for (let i = 0; i < finalBubbleAmt; i++)
+                    {
+                        // console.log(bubbleQueue.length)
+                        bubbleQueue.push(createCharacterBubble(characters, i, app))
+                    }
+                    $('#loading-message').fadeOut()
+                })
         })
 }
 
