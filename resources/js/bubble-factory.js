@@ -1,10 +1,11 @@
-function createBubbles(vaMALID, bubbleQueue, app)
+function createBubbles(vaMALID, bubbleQueue, context)
 {    
     $('#loading-message').hide().text('Getting data...').fadeIn()
 
     Promise.all([
         requestAnimeRankings(),
-        $.getJSON(`https://api.jikan.moe/v3/person/${vaMALID}`)
+        // $.getJSON(`https://api.jikan.moe/v3/person/${vaMALID}`)
+        $.getJSON('resources/json/placeholder.json')
         ])
         .then(([animeRankingData, vaData]) => {            
             updateRankings(animeRankingData)   
@@ -50,18 +51,18 @@ function createBubbles(vaMALID, bubbleQueue, app)
             PIXI.Loader.shared
                 .add('splash', 'resources/img/image.png')
                 .load(() => {
-                    bubbleQueue.push(createVABubble(voiceActor, app))
+                    bubbleQueue.push(createVABubble(voiceActor, context))
                     for (let i = 0; i < finalBubbleAmt; i++)
                     {
                         // console.log(bubbleQueue.length)
-                        bubbleQueue.push(createCharacterBubble(characters, i, app))
+                        bubbleQueue.push(createCharacterBubble(characters, i, context))
                     }
                     $('#loading-message').fadeOut()
                 })
         })
 }
 
-function createVABubble(voiceActor, app)
+function createVABubble(voiceActor, context)
 {
     let { x, y } = getOffscreenPoint()
     return new Bubble({
@@ -75,10 +76,10 @@ function createVABubble(voiceActor, app)
         borderColor: 0x0,
         url: voiceActor.profileURL,
         relativeScale: 1
-    }, app)
+    }, context)
 }
 
-function createCharacterBubble(characters, offset, app)
+function createCharacterBubble(characters, offset, context)
 {
     let { x, y } = getOffscreenPoint(),
         scale = lerp(0, 5 / 6, Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2)),
@@ -94,5 +95,5 @@ function createCharacterBubble(characters, offset, app)
         borderColor: 0xffffff,
         url: character.profileURL,
         relativeScale: scale
-    }, app)
+    }, context)
 }

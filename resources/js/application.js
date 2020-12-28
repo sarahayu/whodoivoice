@@ -7,10 +7,19 @@ function Application()
 
     this.bubbleQueue = []
     this.bubbles = [] 
+    this.currentActiveBubble = null
+    this.mouseMode = { value: true }
     
     setupPIXI()
 
+    PIXI.Loader.shared.onStart.add(() => console.log('Starting...'))
+    PIXI.Loader.shared.onProgress.add(() => $('#loading-message').text(`${Math.floor(PIXI.Loader.shared.progress)}%`))
     PIXI.Loader.shared.onComplete.add(startBubbleAdder)
+
+    // bookkeep last mouse interaction so bubbles can react accordingly to hover event
+    $('body')
+        .on('pointerdown', evnt => this.mouseMode.value = evnt.pointerType === 'mouse')
+        .on('mousemove', () => this.mouseMode.value = true)
 
     function setupPIXI()
     {
@@ -39,9 +48,6 @@ function Application()
                     _this.app.renderer.resize(window.innerWidth, window.innerHeight),
                 200)
         })
-        
-        PIXI.Loader.shared.onStart.add(() => console.log('Starting...'))
-        PIXI.Loader.shared.onProgress.add(() => $('#loading-message').text(`${Math.floor(PIXI.Loader.shared.progress)}%`))
     }
 
     function gameLoop(dt)
@@ -95,5 +101,11 @@ Application.prototype.init = function(vaMALID)
 
     PIXI.Loader.shared.reset()
 
-    createBubbles(vaMALID, this.bubbleQueue, this.app)
+    const context = {
+        app: this.app, 
+        activeBubble: this.currentActiveBubble,
+        mouseMode: this.mouseMode
+    }
+
+    createBubbles(vaMALID, this.bubbleQueue, context)
 }

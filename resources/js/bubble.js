@@ -1,4 +1,4 @@
-function Bubble(renderOpt, app)
+function Bubble(renderOpt, context)
 {
     let _this = this
     // instantiate visual elements ie label, picture
@@ -8,6 +8,7 @@ function Bubble(renderOpt, app)
     this.textColor = renderOpt.textColor
     this.borderColor = renderOpt.borderColor
     this.relativeScale = renderOpt.relativeScale
+    this.context = context
 
     createBubbleSprite()
 
@@ -23,35 +24,39 @@ function Bubble(renderOpt, app)
     this.url = renderOpt.url
 
     function createBubbleSprite()
-    {    
-        const radius = _this.radius        
-    
-        // const circle = createCircleGraphic(LARGEST_RADIUS, renderOpt.borderColor)
-        // _this.border = new PIXI.Sprite(app.renderer.generateTexture(circle))
-        _this.borderCenter = new Vector(LARGEST_RADIUS, LARGEST_RADIUS)
-        _this.border = createCircleGraphic(LARGEST_RADIUS, renderOpt.borderColor)
-        // _this.border.anchor.set(0.5)
-        _this.border.hitArea = new PIXI.Circle(LARGEST_RADIUS, LARGEST_RADIUS, LARGEST_RADIUS)
+    {
+        _this.border = new AnchoredCircle(LARGEST_RADIUS, renderOpt.borderColor)
     
         _this.imgSprite = createImgSprite()
         _this.imgSprite.position.set(LARGEST_RADIUS, LARGEST_RADIUS)
         _this.imgSprite.anchor.set(0.5)
-        _this.border.addChild(_this.imgSprite)
-        _this.setBorderSize(radius * 2)
-        _this.setBorderPos(renderOpt.x, renderOpt.y)
-        _this.border.interactive = true
-        _this.border.buttonMode = true
+        _this.border.setRadius(_this.radius)
+        _this.border.setPosition(renderOpt.x, renderOpt.y)
+
+        const borderSprite = _this.border.circle
+        borderSprite.hitArea = new PIXI.Circle(LARGEST_RADIUS, LARGEST_RADIUS, LARGEST_RADIUS)
+        borderSprite.addChild(_this.imgSprite)
+        borderSprite.interactive = true
+        borderSprite.buttonMode = true
     
-        _this.border
-            .on('pointerover', () => _this.hover())
-            .on('pointerdown', () => _this.click())
+        borderSprite
+            .on('pointerover', () => {
+                // pointerover/mouseover fires on touch screen laptop on last mouse pos,
+                // even if touch was the last interaction
+                // so check if last interaction was a mouse type
+                if (_this.context.mouseMode.value)
+                    _this.expand()
+            })
+            .on('pointerdown', evnt => _this.press(evnt))
+            .on('pointerup', () => _this.release())
+            .on('pointerupoutside', () => _this.deactivate())
             .on('pointerout', () => _this.exit())
-        app.stage.addChild(_this.border)
+        context.app.stage.addChild(borderSprite)
     }
 
     function createImgSprite()
     {
-        const circle = createCircleGraphic(LARGEST_RADIUS, 0xfeeae0),
+        const circle = new AnchoredCircle(LARGEST_RADIUS, 0xfeeae0),
             // resource = PIXI.Loader.shared.resources[renderOpt.textureID]
             resource = PIXI.Loader.shared.resources.splash
 
@@ -60,76 +65,99 @@ function Bubble(renderOpt, app)
             const texture = resource.texture,
                 buffer = new PIXI.Sprite(texture)
 
-            buffer.mask = circle
+            buffer.mask = circle.circle
             buffer.scale.set(LARGEST_DIAMETER / texture.width)
             
-            const croppedScaledTex = app.renderer.generateTexture(
+            const croppedScaledTex = context.app.renderer.generateTexture(
                 buffer, PIXI.SCALE_MODES.LINEAR, 1, new PIXI.Rectangle(0, 0, LARGEST_DIAMETER, LARGEST_DIAMETER)
             )
 
             return new PIXI.Sprite(croppedScaledTex)
         }
-        return new PIXI.Sprite(app.renderer.generateTexture(circle))
+        return new PIXI.Sprite(context.app.renderer.generateTexture(circle.circle))
     }
+}
 
-    function createCircleGraphic(radius, color, x, y)
+Bubble.prototype.expand = function()
+{
+    if (this.context.activeBubble != this)
     {
-        if (x === void 0) x = y = radius
-        const circle = new PIXI.Graphics()
-        circle.beginFill(color)
-        circle.drawCircle(x, y, radius)
-        circle.endFill()
-        return circle
+        if (this.context.activeBubble) 
+        {
+            // other bubble is currently being dragged, even though 
+            // cursor might have temporarily hovered over this bubble
+            if (this.context.activeBubble.dragging) return
+            this.context.activeBubble.deactivate()
+        }
+        this.context.activeBubble = this
     }
-}
 
-Bubble.prototype.setBorderSize = function(diameter)
-{
-    // new diameter is same as old one
-    if (diameter === this.borderCenter.x * 2) return
-
-    const { x, y } = this.getBorderPos()
-    this.border.width = this.border.height = diameter
-    this.borderCenter.x = this.borderCenter.y = diameter / 2
-    this.setBorderPos(x, y)
-}
-
-Bubble.prototype.setBorderPos = function(x, y)
-{
-    const center = this.borderCenter.x
-    this.border.position.set(x - center, y - center)
-}
-
-Bubble.prototype.getBorderPos = function()
-{
-    return new Vector(this.border.position).add(this.borderCenter)
-}
-
-// // here to combine setBorderSize and setBorderPos to decrease calls to position.set
-// Bubble.prototype.setBorderSizePos = function(x, y, diameter)
-// {
-//     this.border.width = this.border.height = diameter
-//     this.setBorderPos(x, y)
-// }
-
-Bubble.prototype.hover = function() 
-{
     this.animation.expanding = true
-    this.border.zIndex = 2
+    this.border.circle.zIndex = 2
 }
 
-Bubble.prototype.click = function() 
+Bubble.prototype.press = function(evnt) 
 {
-    if (this.animation.percentOfFullSize() < 0.5)
-        this.hover()
-    else
-        window.open(this.url, '_blank')
+    this.expand()
+
+    this.border.circle.data = evnt.data
+    this.dragging = true
+
+
+    // if (this.animation.percentOfFullSize() < 0.5)
+    //     this.hover()
+    // else
+    //     window.open(this.url, '_blank')
+}
+
+
+Bubble.prototype.release = function() 
+{
+    this.dragging = false
+    this.border.circle.data = null
 }
 
 Bubble.prototype.exit = function() 
 {
+    if (this.dragging) return
+    
     this.animation.expanding = false
-    this.border.zIndex = 1
+    this.border.circle.zIndex = 1
+}
+
+Bubble.prototype.deactivate = function()
+{
+    this.context.activeBubble = null
+    
+    this.release()
+    this.exit()
+}
+
+Bubble.prototype.getPosition = function()
+{
+    return this.border.getPosition()
+}
+
+Bubble.prototype.setPosition = function(x, y)
+{
+    if (typeof x !== 'number')
+    {
+        y = x.y
+        x = x.x
+    }
+
+    this.border.setPosition(x, y)
+}
+
+Bubble.prototype.move = function(x, y)
+{
+    if (typeof x !== 'number')
+    {
+        y = x.y
+        x = x.x
+    }
+
+    this.border.move(x, y)
 }
 
 Bubble.prototype.update = function (dt, velocityFactor)
@@ -151,18 +179,19 @@ Bubble.prototype.update = function (dt, velocityFactor)
     //     this.dragged = false
 
     // update physics stuff
-    if (!this.dragged)
+    if (!this.dragging)
     {
-        const borderCenter = this.getBorderPos()
-        this.velocity = this.velocity.add(getGravVector(borderCenter).mult(FRAME_LEN * dt))
+        this.velocity = this.velocity.add(getGravVector(this.getPosition()).mult(FRAME_LEN * dt))
         // if it's offscreen, disregard velocityFactor slowdown to give it an opportunity to enter screenspace
-        if (onScreen(borderCenter, 0))
+        if (onScreen(this.getPosition(), 0))
             this.velocity = this.velocity.mult(velocityFactor)
-        const { x, y } =  borderCenter.add(this.velocity)
-        this.setBorderPos(x, y)
+        this.move(this.velocity)
     }
     else
-        this.imgSprite.position.set(mouseX, mouseY)
+    {
+        const circle = this.border.circle
+        this.setPosition(circle.data.getLocalPosition(circle.parent))
+    }
 
     // // did user click on this button?
     // if (hovered && wasClickAction && this.animation.percentOfFullSize() > 0.5)
@@ -188,13 +217,12 @@ BubbleAnimation.prototype.update = function (deltaTime)
         Math.max(this.bubble.radius + (this.expanding ? 1 : -1) * deltaTime * FRAME_LEN * 50, this.constRadius),
         this.constRadius + 10)
     const apparentRadius = this.bubble.radius + (this.bubble.radius - this.constRadius) * 5
-    this.bubble.border.hitArea.radius = this.bubble.radius * LARGEST_RADIUS / apparentRadius
-    this.bubble.setBorderSize(apparentRadius * 2)
-    this.bubble.border.width = this.bubble.border.height = apparentRadius * 2
+    this.bubble.border.circle.hitArea.radius = this.bubble.radius * LARGEST_RADIUS / apparentRadius
+    this.bubble.border.setRadius(apparentRadius)
     const stroke = lerp(MAX_STROKE * (apparentRadius / (MAX_RADIUS + RADIUS_EXPAND)), HOVER_STROKE, this.percentOfFullSize())
     this.bubble.imgSprite.scale.set((apparentRadius - stroke) / apparentRadius)
     if (this.percentOfFullSize() == 0)
-        this.bubble.border.zIndex = 0
+        this.bubble.border.circle.zIndex = 0
 }
 
 BubbleAnimation.prototype.percentOfFullSize = function ()
