@@ -75,8 +75,9 @@ function createVABubble(voiceActor, context)
         textColor: 'white',
         borderColor: 0x0,
         url: voiceActor.profileURL,
-        relativeScale: 1
-    }, context)
+        relativeScale: 1,
+        context: context
+    })
 }
 
 function createCharacterBubble(characters, offset, context)
@@ -94,6 +95,7 @@ function createCharacterBubble(characters, offset, context)
         textColor: 'black',
         borderColor: 0xffffff,
         url: character.profileURL,
-        relativeScale: scale
-    }, context)
+        relativeScale: scale,
+        context: context
+    })
 }

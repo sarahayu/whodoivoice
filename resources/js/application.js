@@ -8,7 +8,7 @@ function Application()
     this.bubbleQueue = []
     this.bubbles = [] 
     this.currentActiveBubble = null
-    this.mouseMode = { value: true }
+    this.lastCursor = { isMouse: true }
     
     setupPIXI()
 
@@ -16,10 +16,9 @@ function Application()
     PIXI.Loader.shared.onProgress.add(() => $('#loading-message').text(`${Math.floor(PIXI.Loader.shared.progress)}%`))
     PIXI.Loader.shared.onComplete.add(startBubbleAdder)
 
-    // bookkeep last mouse interaction so bubbles can react accordingly to hover event
     $('body')
-        .on('pointerdown', evnt => this.mouseMode.value = evnt.pointerType === 'mouse')
-        .on('mousemove', () => this.mouseMode.value = true)
+        .on('pointerdown', evnt => this.lastCursor.isMouse = evnt.pointerType === 'mouse')
+        .on('mousemove', () => this.lastCursor.isMouse = true)
 
     function setupPIXI()
     {
@@ -41,10 +40,9 @@ function Application()
         _this.app.ticker.add(gameLoop)
 
         // https://css-tricks.com/building-an-images-gallery-using-pixijs-and-webgl/
-        var resizeTimer
         window.addEventListener('resize', () => {
-            if (resizeTimer) clearTimeout(resizeTimer)
-            resizeTimer = setTimeout(() => 
+            if (_this.resizeTimer) clearTimeout(_this.resizeTimer)
+            _this.resizeTimer = setTimeout(() => 
                     _this.app.renderer.resize(window.innerWidth, window.innerHeight),
                 200)
         })
@@ -104,7 +102,7 @@ Application.prototype.init = function(vaMALID)
     const context = {
         app: this.app, 
         activeBubble: this.currentActiveBubble,
-        mouseMode: this.mouseMode
+        lastCursor: this.lastCursor
     }
 
     createBubbles(vaMALID, this.bubbleQueue, context)
