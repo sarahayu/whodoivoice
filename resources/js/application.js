@@ -1,6 +1,6 @@
 function Application()
 {    
-    let _this = this
+    const _this = this
 
     this.velocityFactor = 1
     this.velocityDecreaseRate = 0.99995
@@ -71,7 +71,7 @@ function Application()
             if (_this.bubbleQueue.length == 0)
                 setTimeout(addBubble, 1000)
             else if (_this.bubbleQueue.length == _this.bubbles.length)
-                setTimeout(() =>
+                _this._bubbleSlower = setTimeout(() =>
                 {
                     console.log('slowed down')
                     _this.velocityDecreaseRate = 0.998
@@ -98,6 +98,8 @@ Application.prototype.init = function(vaMALID)
     this.app.stage.removeChildren()
 
     PIXI.Loader.shared.reset()
+    if (this._bubbleSlower)
+        clearTimeout(this._bubbleSlower)
 
     const context = {
         app: this.app, 

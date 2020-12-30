@@ -1,63 +1,103 @@
-function Vector(x, y)
+/*
+* using ES6 class for this because Vector has lots of short member methods
+* and writing Vector.prototype functions become repetitive
+*/
+
+class Vector
 {
-    if (typeof x === 'number')
+    /**
+     * @param {number} x 
+     * @param {number} y 
+     */
+    constructor(x, y)
     {
+        this.set(x, y)
+    }
+
+    /**
+     * @param {Vector} other
+     *//**
+     * @param {number} x
+     * @param {number} y
+     */
+    set(x, y)
+    {
+        if (typeof x !== 'number')
+        {
+            y = x.y
+            x = x.x
+        }
         this.x = x
         this.y = y
     }
-    else
-    {
-        this.x = x.x
-        this.y = x.y
-    }
-}
 
-{
-    const _proto = Vector.prototype
-
-    _proto.set = function(x, y)
-    {
-        this.x = x
-        this.y = y
-    }
-    
-    _proto.distSq = function(other)
+    /**
+     * @param {Vector} other
+     * @return {Vector}
+     */
+    distSq(other)
     {
         return other.sub(this).magSq()
     }
-    
-    _proto.sub = function(other)
+
+    /**
+     * @param {Vector} other
+     * @return {Vector}
+     */
+    sub(other)
     {
         return new Vector(this.x - other.x, this.y - other.y)
     }
-    
-    _proto.add = function(other)
+
+    /**
+     * @param {Vector} other
+     * @return {Vector}
+     */
+    add(other)
     {
         return new Vector(this.x + other.x, this.y + other.y)
     }
-    
-    _proto.mult = function(scale)
+
+    /**
+     * @param {number} scale
+     * @return {Vector}
+     */
+    mult(scale)
     {
         return new Vector(this.x * scale, this.y * scale)
     }
-    
-    _proto.div = function(scale)
+
+    /**
+     * @param {number} scale
+     * @return {Vector}
+     */
+    div(scale)
     {
         return this.mult(1 / scale)
     }
-    
-    _proto.magSq = function()
+
+    /**
+     * @return {Vector}
+     */
+    magSq()
     {
         return this.x * this.x + this.y * this.y
     }
-    
-    _proto.normalize = function()
+
+    /**
+     * @return {Vector}
+     */
+    normalize()
     {
         const mag = Math.sqrt(this.magSq())
         return new Vector(this.x / mag, this.y / mag)
     }
-    
-    _proto.dot = function(other)
+
+    /**
+     * @param {Vector} other
+     * @return {Vector}
+     */
+    dot(other)
     {
         return this.x * other.x + this.y * other.y
     }
