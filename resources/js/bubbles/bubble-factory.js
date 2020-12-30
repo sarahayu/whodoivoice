@@ -1,3 +1,8 @@
+/**
+ * @param {number} vaMALID 
+ * @param {Bubble[]} bubbleQueue 
+ * @param {Context} context 
+ */
 function createBubbles(vaMALID, bubbleQueue, context)
 {    
     $('#loading-message').hide().text('Getting data...').fadeIn()
@@ -52,11 +57,13 @@ function createBubbles(vaMALID, bubbleQueue, context)
                 .add('splash', 'resources/img/image.png')
                 .load(() => {
                     bubbleQueue.push(createVABubble(voiceActor, context))
-                    for (let i = 0; i < finalBubbleAmt; i++)
-                    {
-                        // console.log(bubbleQueue.length)
-                        bubbleQueue.push(createCharacterBubble(characters, i, context))
-                    }
+
+                    let offset = 0
+                    const characterBubbles = characters.splice(0, finalBubbleAmt).map(
+                        character => createCharacterBubble(character, offset++, context))
+
+                    bubbleQueue.push(...characterBubbles)
+                    
                     $('#loading-message').fadeOut()
                 })
         })
@@ -64,14 +71,12 @@ function createBubbles(vaMALID, bubbleQueue, context)
 
 function createVABubble(voiceActor, context)
 {
-    let { x, y } = getOffscreenPoint()
     return new Bubble({
         topStr: voiceActor.japaneseName,
         bottomStr: voiceActor.name,
         textureID: voiceActor.name,
         radius: 100,
-        x: x,
-        y: y,
+        position: getOffscreenPoint(),
         textColor: 'white',
         borderColor: 0x0,
         url: voiceActor.profileURL,
@@ -80,22 +85,23 @@ function createVABubble(voiceActor, context)
     })
 }
 
-function createCharacterBubble(characters, offset, context)
+function createCharacterBubble(character, offset, context)
 {
-    let { x, y } = getOffscreenPoint(),
-        scale = lerp(0, 5 / 6, Math.pow((MAX_BUBBLES - offset) / MAX_BUBBLES, 2)),
-        character = characters[offset]
     return new Bubble({
         topStr: character.name,
         bottomStr: character.animeStr,
         textureID: character.characterID.toString(),
-        radius: scale * 60 + 40,
-        x: x,
-        y: y,
+        radius: getBubbleScale(offset) * 60 + 40,
+        position: getOffscreenPoint(),
         textColor: 'black',
         borderColor: 0xffffff,
         url: character.profileURL,
-        relativeScale: scale,
+        relativeScale: getBubbleScale(offset),
         context: context
     })
+}
+
+function getBubbleScale(bubbleOffset)
+{
+    return lerp(0, 5 / 6, Math.pow((MAX_BUBBLES - bubbleOffset) / MAX_BUBBLES, 2))
 }

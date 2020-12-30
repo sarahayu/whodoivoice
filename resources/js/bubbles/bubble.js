@@ -1,22 +1,24 @@
 /**
+ * members of context option
+ * @typedef {{isMouse: boolean}} LastCursor
+ * @typedef {{app: PIXI.Application, activeBubble: Bubble, lastCursor: LastCursor}} Context
  * 
- * @typedef {Object} options
+ * Options for Bubble constructor
+ * @typedef {Object} Options
  * @property {string} topStr
  * @property {string} bottomStr
  * @property {string} textureID
- * @property {string} radius
- * @property {string} x
- * @property {string} y
- * @property {string} textColor
- * @property {string} borderColor
+ * @property {number} radius
+ * @property {Vector} position
+ * @property {number} textColor
+ * @property {number} borderColor
  * @property {string} url
- * @property {string} relativeScale
- * @property {string} context
+ * @property {number} relativeScale
+ * @property {Context} context
  */
 
  /**
-  * 
-  * @param {options} options 
+  * @param {Options} options 
   */
 function Bubble(options)
 {
@@ -35,7 +37,7 @@ function Bubble(options)
     // instantiate physics properties
     this.mass = options.radius * 1000
     this.invMass = 1 / this.mass
-    this.location = new Vector(options.x, options.y)
+    this.position = options.position
     this.velocity = new Vector(0, 0)
 
 
@@ -53,7 +55,7 @@ function Bubble(options)
         self.imgSprite.position.set(LARGEST_RADIUS, LARGEST_RADIUS)
         self.imgSprite.anchor.set(0.5)
         self.border.setRadius(self.radius)
-        self.border.setPosition(options.x, options.y)
+        self.border.setPosition(options.position.x, options.position.y)
 
         const borderSprite = self.border.circle
         borderSprite.hitArea = new PIXI.Circle(LARGEST_RADIUS, LARGEST_RADIUS, LARGEST_RADIUS)
@@ -161,7 +163,6 @@ Bubble.prototype.press = function(evnt)
     }
 }
 
-
 Bubble.prototype.pointerUp = function(evnt) 
 {
     if (this.state === BubbleState.DRAGGING)
@@ -197,9 +198,6 @@ Bubble.prototype.exit = function()
     this.border.circle.zIndex = 1
 }
 
-/**
- * @return {Vector}
- */
 Bubble.prototype.getPosition = function()
 {
     return this.border.getPosition()

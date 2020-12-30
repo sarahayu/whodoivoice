@@ -13,11 +13,6 @@ function getOffscreenPoint()
     }
 }
 
-/**
- * Returns vector representing gravity force vector towards center of screen
- * @param {Vector} curLoc 
- * @return {Vector}
- */
 function getGravVector(curLoc)
 {
     let gravVector
@@ -25,7 +20,7 @@ function getGravVector(curLoc)
     if (windowWidth > windowHeight)
     {
         const halfHeight = windowHeight / 2
-        let leftPoint = new Vector(halfHeight, halfHeight),
+        const leftPoint = new Vector(halfHeight, halfHeight),
             rightPoint = new Vector(windowWidth - halfHeight, halfHeight)
 
         if (curLoc.x >= leftPoint.x && curLoc.x <= rightPoint.x)
@@ -36,11 +31,11 @@ function getGravVector(curLoc)
     else
     {
         const halfWidth = windowWidth / 2
-        let topPoint = new Vector(halfWidth, halfWidth),
-            bottomPoint = new Vector(windowHeight - halfWidth, halfWidth)
+        const topPoint = new Vector(halfWidth, halfWidth),
+            bottomPoint = new Vector(halfWidth, windowHeight - halfWidth)
 
-        if (curLoc.y <= topPoint.y && curLoc.y >= bottomPoint.y)
-            gravVector = new Vector(0, halfWidth - curLoc.x)
+        if (curLoc.y >= topPoint.y && curLoc.y <= bottomPoint.y)
+            gravVector = new Vector(halfWidth - curLoc.x, 0)
         else
             gravVector = ((curLoc.y > bottomPoint.y) ? bottomPoint : topPoint).sub(curLoc)
     }
@@ -48,21 +43,11 @@ function getGravVector(curLoc)
     return gravVector.normalize().mult(20)
 }
 
-/**
- * @param {number} width 
- * @param {number} height 
- * @return {Vector}
- */
 function randPoint(width, height)
 {
     return new Vector(Math.random() * width, Math.random() * height)
 }
 
-/**
- * @param {Vector} point 
- * @param {number} padding 
- * @return {Vector}
- */
 function onScreen(point, padding)
 {
     const { x, y } = point
@@ -70,24 +55,11 @@ function onScreen(point, padding)
         y >= -padding && y <= window.innerHeight + padding;
 }
 
-/**
- * 
- * @param {string} str 
- * @param {number} maxLen 
- * @return {string}
- */
 function trimMaxLength(str, maxLen)
 {
     return str.length > maxLen ? str.substring(0, maxLen - 3).trim() + "..." : str;
 }
 
-/**
- * 
- * @param {number} min 
- * @param {number} max 
- * @param {number} a 
- * @return {number}
- */
 function lerp(min, max, a)
 {
     return (max - min) * a + min

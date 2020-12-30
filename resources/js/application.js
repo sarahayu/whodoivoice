@@ -1,6 +1,6 @@
 function Application()
 {    
-    const _this = this
+    const self = this
 
     this.velocityFactor = 1
     this.velocityDecreaseRate = 0.99995
@@ -22,7 +22,7 @@ function Application()
 
     function setupPIXI()
     {
-        _this.app = new PIXI.Application({
+        self.app = new PIXI.Application({
             width: window.innerWidth,
             height: window.innerHeight,
             autoDensity: true,
@@ -30,55 +30,55 @@ function Application()
             antialias: true
         })
     
-        _this.app.renderer.view.style.position = 'absolute'
-        _this.app.renderer.view.style.display = 'block'
+        self.app.renderer.view.style.position = 'absolute'
+        self.app.renderer.view.style.display = 'block'
         // let fx = new PIXI.filters.FXAAFilter()
         // app.stage.filters = [ new PIXI.filters.FXAAFilter() ]
-        document.body.appendChild(_this.app.view)
+        document.body.appendChild(self.app.view)
         
-        _this.app.stage.sortableChildren = true
-        _this.app.ticker.add(gameLoop)
+        self.app.stage.sortableChildren = true
+        self.app.ticker.add(gameLoop)
 
         // https://css-tricks.com/building-an-images-gallery-using-pixijs-and-webgl/
         window.addEventListener('resize', () => {
-            if (_this.resizeTimer) clearTimeout(_this.resizeTimer)
-            _this.resizeTimer = setTimeout(() => 
-                    _this.app.renderer.resize(window.innerWidth, window.innerHeight),
+            if (self.resizeTimer) clearTimeout(self.resizeTimer)
+            self.resizeTimer = setTimeout(() => 
+                    self.app.renderer.resize(window.innerWidth, window.innerHeight),
                 200)
         })
     }
 
     function gameLoop(dt)
     {
-        _this.velocityFactor = Math.max(_this.velocityFactor *= _this.velocityDecreaseRate, 0.5)
+        self.velocityFactor = Math.max(self.velocityFactor *= self.velocityDecreaseRate, 0.5)
     
-        for (const bubble of _this.bubbles)
-            bubble.update(dt, _this.velocityFactor)
+        for (const bubble of self.bubbles)
+            bubble.update(dt, self.velocityFactor)
             
-        for (let b1 = 0; b1 < _this.bubbles.length - 1; b1++)
-            for (let b2 = b1 + 1; b2 < _this.bubbles.length; b2++)
-                resolveCollisionVelocity(_this.bubbles[b1], _this.bubbles[b2])
+        for (let b1 = 0; b1 < self.bubbles.length - 1; b1++)
+            for (let b2 = b1 + 1; b2 < self.bubbles.length; b2++)
+                resolveCollisionVelocity(self.bubbles[b1], self.bubbles[b2])
 
-        for (let b1 = 0; b1 < _this.bubbles.length - 1; b1++)
-            for (let b2 = b1 + 1; b2 < _this.bubbles.length; b2++)
-                correctPositions(_this.bubbles[b1], _this.bubbles[b2])
+        for (let b1 = 0; b1 < self.bubbles.length - 1; b1++)
+            for (let b2 = b1 + 1; b2 < self.bubbles.length; b2++)
+                correctPositions(self.bubbles[b1], self.bubbles[b2])
     }
 
     function startBubbleAdder()
     {
         (function addBubble()
         {
-            if (_this.bubbleQueue.length == 0)
+            if (self.bubbleQueue.length == 0)
                 setTimeout(addBubble, 1000)
-            else if (_this.bubbleQueue.length == _this.bubbles.length)
-                _this._bubbleSlower = setTimeout(() =>
+            else if (self.bubbleQueue.length == self.bubbles.length)
+                self._bubbleSlower = setTimeout(() =>
                 {
                     console.log('slowed down')
-                    _this.velocityDecreaseRate = 0.998
+                    self.velocityDecreaseRate = 0.998
                 }, 2000)
             else
             {
-                _this.bubbles.push(_this.bubbleQueue[_this.bubbles.length])
+                self.bubbles.push(self.bubbleQueue[self.bubbles.length])
                 setTimeout(addBubble, 1000 / 15)
             }
         })()

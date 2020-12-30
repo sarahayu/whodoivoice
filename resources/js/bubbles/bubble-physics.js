@@ -1,8 +1,3 @@
-
-/**
- * @param {Bubble} bubble1 
- * @param {Bubble} bubble2 
- */
 function resolveCollisionVelocity(bubble1, bubble2)
 {
     const normal = bubble2.getPosition().sub(bubble1.getPosition())
@@ -39,10 +34,6 @@ function resolveCollisionVelocity(bubble1, bubble2)
     bubble2.velocity = bubble2.velocity.add(impulse.div(bubble2.mass))
 }
 
-/**
- * @param {Bubble} bubble1 
- * @param {Bubble} bubble2 
- */
 function correctPositions(bubble1, bubble2)
 {
     const normal = bubble2.getPosition().sub(bubble1.getPosition())
