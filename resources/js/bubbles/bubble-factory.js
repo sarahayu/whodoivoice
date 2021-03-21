@@ -22,50 +22,49 @@ function createBubbles(vaMALID, bubbleQueue, context)
 
             const bubbleResourceCalls = []
 
-            // if (!voiceActor.picURL.includes('questionmark'))
-            //     bubbleResourceCalls.push({
-            //         name: voiceActor.name,
-            //         url: voiceActor.picURL,
-            //         onComplete: () => {
-            //             bubbleQueue.push(createVABubble(voiceActor, app))
-            //         }
-            //     })
-            // else
-            //     bubbleQueue.push(createVABubble(voiceActor, app))
+            if (!voiceActor.picURL.includes('questionmark'))
+                bubbleResourceCalls.push({
+                    name: voiceActor.name,
+                    url: voiceActor.picURL,
+                    onComplete: () => {
+                        bubbleQueue.push(createVABubble(voiceActor, context))
+                    }
+                })
+            else
+                bubbleQueue.push(createVABubble(voiceActor, context))
 
             const finalBubbleAmt = Math.min(MAX_BUBBLES, characters.length)
-            // for (let i = 0; i < finalBubbleAmt; i++)
-            // {
-            //     if (!characters[i].picURL.includes('questionmark'))
-            //         bubbleResourceCalls.push({
-            //             name: characters[i].characterID.toString(),
-            //             url: characters[i].picURL,
-            //             onComplete: () => {
-            //                 console.log('asdf')
-            //                 bubbleQueue.push(createCharacterBubble(characters, i, app))
-            //             }
-            //         })
-            //     else
-            //         bubbleQueue.push(createCharacterBubble(characters, i, app))
-            // }
+            for (let i = 0; i < finalBubbleAmt; i++)
+            {
+                if (!characters[i].picURL.includes('questionmark'))
+                    bubbleResourceCalls.push({
+                        name: characters[i].characterID.toString(),
+                        url: characters[i].picURL,
+                        onComplete: () => {
+                            bubbleQueue.push(createCharacterBubble(characters[i], i, context))
+                        }
+                    })
+                else
+                    bubbleQueue.push(createCharacterBubble(characters[i], i, context))
+            }
 
 
-            // PIXI.Loader.shared
-            //     .add(bubbleResourceCalls)
-            //     .load(() => $('#loading-message').fadeOut())
             PIXI.Loader.shared
-                .add('splash', 'resources/img/image.png')
-                .load(() => {
-                    bubbleQueue.push(createVABubble(voiceActor, context))
+                .add(bubbleResourceCalls)
+                .load(() => $('#loading-message').fadeOut())
+            // PIXI.Loader.shared
+            //     .add('splash', 'resources/img/image.png')
+            //     .load(() => {
+            //         bubbleQueue.push(createVABubble(voiceActor, context))
 
-                    let offset = 0
-                    const characterBubbles = characters.splice(0, finalBubbleAmt).map(
-                        character => createCharacterBubble(character, offset++, context))
+            //         let offset = 0
+            //         const characterBubbles = characters.splice(0, finalBubbleAmt).map(
+            //             character => createCharacterBubble(character, offset++, context))
 
-                    bubbleQueue.push(...characterBubbles)
+            //         bubbleQueue.push(...characterBubbles)
                     
-                    $('#loading-message').fadeOut()
-                })
+            //         $('#loading-message').fadeOut()
+            //     })
         })
 }
 
@@ -97,7 +96,8 @@ function createCharacterBubble(character, offset, context)
         borderColor: 0xffffff,
         url: character.profileURL,
         relativeScale: getBubbleScale(offset),
-        context: context
+        context: context,
+        offset: offset
     })
 }
 

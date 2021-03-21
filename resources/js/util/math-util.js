@@ -3,13 +3,13 @@ function getOffscreenPoint()
     switch (Math.floor(Math.random() * 4))
     {
         case 0:
-            return randPoint(window.innerWidth, 400).add(new Vector(0, -500))
+            return vm_add(randPoint(window.innerWidth, 400), 0, -500)
         case 1:
-            return randPoint(window.innerWidth, 400).add(new Vector(0, window.innerHeight + 100))
+            return vm_add(randPoint(window.innerWidth, 400), 0, window.innerHeight + 100)
         case 2:
-            return randPoint(400, window.innerHeight + 1000).add(new Vector(-500, -500))
+            return vm_add(randPoint(400, window.innerHeight + 1000), -500, -500)
         case 3:
-            return randPoint(400, window.innerHeight + 1000).add(new Vector(window.innerWidth + 100, -500))
+            return vm_add(randPoint(400, window.innerHeight + 1000), window.innerWidth + 100, -500)
     }
 }
 
@@ -20,32 +20,32 @@ function getGravVector(curLoc)
     if (windowWidth > windowHeight)
     {
         const halfHeight = windowHeight / 2
-        const leftPoint = new Vector(halfHeight, halfHeight),
-            rightPoint = new Vector(windowWidth - halfHeight, halfHeight)
+        const leftPoint = new PIXI.Point(halfHeight, halfHeight),
+            rightPoint = new PIXI.Point(windowWidth - halfHeight, halfHeight)
 
         if (curLoc.x >= leftPoint.x && curLoc.x <= rightPoint.x)
-            gravVector = new Vector(0, halfHeight - curLoc.y)
+            gravVector = new PIXI.Point(0, halfHeight - curLoc.y)
         else
-            gravVector = ((curLoc.x > rightPoint.x) ? rightPoint : leftPoint).sub(curLoc)
+            gravVector = vm_sub((curLoc.x > rightPoint.x) ? rightPoint : leftPoint, curLoc)
     }
     else
     {
         const halfWidth = windowWidth / 2
-        const topPoint = new Vector(halfWidth, halfWidth),
-            bottomPoint = new Vector(halfWidth, windowHeight - halfWidth)
+        const topPoint = new PIXI.Point(halfWidth, halfWidth),
+            bottomPoint = new PIXI.Point(halfWidth, windowHeight - halfWidth)
 
         if (curLoc.y >= topPoint.y && curLoc.y <= bottomPoint.y)
-            gravVector = new Vector(halfWidth - curLoc.x, 0)
+            gravVector = new PIXI.Point(halfWidth - curLoc.x, 0)
         else
-            gravVector = ((curLoc.y > bottomPoint.y) ? bottomPoint : topPoint).sub(curLoc)
+            gravVector = vm_sub((curLoc.y > bottomPoint.y) ? bottomPoint : topPoint, curLoc)
     }
 
-    return gravVector.normalize().mult(20)
+    return vm_mult(vm_normalize(gravVector), 20)
 }
 
 function randPoint(width, height)
 {
-    return new Vector(Math.random() * width, Math.random() * height)
+    return new PIXI.Point(Math.random() * width, Math.random() * height)
 }
 
 function onScreen(point, padding)
