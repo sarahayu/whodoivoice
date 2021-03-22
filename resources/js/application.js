@@ -51,6 +51,16 @@ class Application
             self.app.renderer.view.style.display = 'block'
             // let fx = new PIXI.filters.FXAAFilter()
             // app.stage.filters = [ new PIXI.filters.FXAAFilter() ]
+            const filter = new PIXI.Filter(myVertex, myFragment);
+            // first is the horizontal shift, positive is to the right
+            // second is the same as scaleY
+            filter.uniforms.shadowDirection = [0.4, 0.5];
+            filter.uniforms.floorY = 0.0;
+            // how big is max shadow shift to the side?
+            // try to switch that off ;)
+            filter.padding = 100;
+
+            self.app.stage.filters = [ filter ]
             document.body.appendChild(self.app.view)
 
             self.app.stage.sortableChildren = true

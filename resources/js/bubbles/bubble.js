@@ -23,6 +23,10 @@ class Bubble
         this.dragged = false
         this.url = options.url
         this.state = BubbleState.DORMANT
+        this.topLabel = {}
+        this.bottomLabel = {}
+
+        this.animation.update(0)
 
         function createBubbleSprite()
         {
@@ -32,15 +36,19 @@ class Bubble
             self.imgSprite.anchor.set(0.5)
 
             self.border.width = self.border.height = self.radius * 2
-            self.border.position.set(options.position.x, options.position.y)
 
             self.border.hitArea = new PIXI.Circle(0, 0, LARGEST_RADIUS)
             self.border.addChild(self.imgSprite)
             self.border.interactive = true
             self.border.buttonMode = true
+
             attachEventListeners(self.border)
 
-            options.context.app.stage.addChild(self.border)
+            self.bubbleContainer = new PIXI.Container()
+            self.bubbleContainer.addChild(self.border)
+            self.bubbleContainer.position.set(options.position.x, options.position.y)
+
+            options.context.app.stage.addChild(self.bubbleContainer)
         }
 
         function createImgSprite()
@@ -100,26 +108,34 @@ class Bubble
     {
         const activeBubble = this.context.activeBubble.value
 
-        if (activeBubble != this)
+        if (activeBubble)
         {
-            if (activeBubble)
-            {
-                // other bubble is currently being dragged, even though 
-                // cursor might have temporarily hovered over this bubble
-                if (activeBubble.state === BubbleState.DRAGGING)
-                    return
-                activeBubble.exit()
-            }
-            this.context.activeBubble.value = this
+            // other bubble is currently being dragged, even though 
+            // cursor might have temporarily hovered over this bubble
+            if (activeBubble.state === BubbleState.DRAGGING)
+                return
+            activeBubble.exit()
         }
-
+        this.context.activeBubble.value = this
+        
         this.animation.expanding = true
-        this.border.zIndex = 2
+        this.bubbleContainer.zIndex = 2
+
+        if (!this.topLabel.textRope)
+        {
+            this.attachText(this.topLabel, this.topStr, 1, 'normal')
+            this.attachText(this.bottomLabel, this.bottomStr, -1, 'bold')
+        }
     }
 
     hover(evnt)
     {
-        if (!this.context.lastCursor.isMouse || this.context.activeBubble.value === this)
+        if (
+            /* this is for making sure bubbles don't expand when floating over 
+            last mouse pos when user is using touch screen currently
+            (users such as myself) */
+            !this.context.lastCursor.isMouse 
+            || this.context.activeBubble.value === this)
             return
 
         this.expand(evnt)
@@ -128,11 +144,11 @@ class Bubble
     
     press(evnt)
     {
-        // TODO still have to figure out how to solve multitouch glitching
+        // TODO still have to figure out how to prevent multitouch
         if (!evnt.data.isPrimary)
             return
 
-        this.border.data = evnt.data
+        this.bubbleContainer.data = evnt.data
 
         if (this.state === BubbleState.DORMANT)
             this.expand(evnt)
@@ -157,7 +173,7 @@ class Bubble
 
         if (this.state === BubbleState.DRAGGING)
         {
-            this.border.data = null
+            this.bubbleContainer.data = null
             this.state = BubbleState.HOVERED
         }
         else if (this.state === BubbleState.CLICKED)
@@ -178,21 +194,21 @@ class Bubble
 
         if (this.lastPointerPos)
         {
-            const curPos = evnt.data.getLocalPosition(this.border.parent),
+            const curPos = evnt.data.getLocalPosition(this.bubbleContainer.parent),
                 distSq = vm_distSq(this.lastPointerPos, curPos)
             this.lastPointerPos = curPos
 
             if (distSq < 5) return
         }
         else
-            this.lastPointerPos = evnt.data.getLocalPosition(this.border.parent)
+            this.lastPointerPos = evnt.data.getLocalPosition(this.bubbleContainer.parent)
 
         // either the user has clicked and moved, 
         // or the user is holding down touch and dragging
         if (this.state === BubbleState.CLICKED
             || (evnt.data.pointerType !== 'mouse' && this.state === BubbleState.HOVERED))
             this.state = BubbleState.DRAGGING
-        this.border.data = evnt.data
+        this.bubbleContainer.data = evnt.data
     }
 
     exit(forceExit)
@@ -202,13 +218,32 @@ class Bubble
             this.context.activeBubble.value = null
             this.state = BubbleState.DORMANT
             this.animation.expanding = false
-            this.border.zIndex = 1
+            this.bubbleContainer.zIndex = 1
         }
+    }
+
+    destroyLabels()
+    {
+        if (this.topLabel.textRope)
+            this.destroyLabel(this.topLabel)
+        if (this.bottomLabel.textRope)
+            this.destroyLabel(this.bottomLabel)
+
+        this.topLabel = {}
+        this.bottomLabel = {}
+    }
+
+    destroyLabel(label)
+    {
+        label.textRope.destroy(true)
+        this.bubbleContainer.removeChild(label.textRope)
+        label.textRope = null
+        label.text = null
     }
 
     getPosition()
     {
-        return this.border.position
+        return this.bubbleContainer.position
     }
 
     setPosition(x, y)
@@ -219,7 +254,7 @@ class Bubble
             x = x.x
         }
 
-        this.border.position.set(x, y)
+        this.bubbleContainer.position.set(x, y)
     }
 
     move(dx, dy)
@@ -231,12 +266,13 @@ class Bubble
         }
 
         const { x, y } = this.getPosition()
-        this.border.position.set(x + dx, y + dy)
+        this.bubbleContainer.position.set(x + dx, y + dy)
     }
 
     update(dt, velocityFactor)
     {
-        this.animation.update(dt)
+        if (this.state !== BubbleState.DORMANT || this.animation.percentOfFullSize != 0)
+            this.animation.update(dt)
 
         if (this.state !== BubbleState.DRAGGING)
         {
@@ -247,12 +283,64 @@ class Bubble
             this.move(this.velocity)
         }
         else
-            this.setPosition(this.border.data.getLocalPosition(this.border.parent))
+            this.setPosition(this.bubbleContainer.data.getLocalPosition(this.bubbleContainer.parent))
+    }
+
+    attachText(label, str, stepFactor, bold)
+    {
+        if (!str) return
+
+        label.text = new PIXI.Text(str, {
+            fontFamily: 'Courier New',
+            fill: this.textColor,
+            fontWeight: bold,
+            fontSize: 22
+        })
+        label.text.updateText()
+
+        label.points = []
+
+        defineCurvePoints(label.points, this.radius * stepFactor, label.text.texture.width, 0)
+
+        label.textRope = new PIXI.SimpleRope(label.text.texture, label.points)
+
+        this.bubbleContainer.addChild(label.textRope)
+
+        /*
+        if (!str) return
+
+        this.topLabel = new PIXI.Text(this.topStr, {
+            fontFamily: 'Courier New',
+            fill: this.textColor
+        })
+        this.topLabel.updateText()
+
+        this.topLabelPoints = []
+
+        defineCurvePoints(this.topLabelPoints, this.radius, this.topLabel.texture.width)
+
+        this.topLabelStrip = new PIXI.SimpleRope(this.topLabel.texture, this.topLabelPoints)
+
+        this.bubbleContainer.addChild(this.topLabelStrip)*/
+    }
+
+    redefineLabelCurve(top, radius, opacity, offset)
+    {
+        if (top && this.topLabel.textRope)
+        {
+            this.topLabel.textRope.alpha = opacity
+            defineCurvePoints(this.topLabel.points, radius, this.topLabel.text.texture.width, offset)
+        }
+        else if (!top && this.bottomLabel.textRope)
+        {
+            this.bottomLabel.textRope.alpha = opacity
+            defineCurvePoints(this.bottomLabel.points, radius * -1, this.bottomLabel.text.texture.width, offset)
+        }
     }
 
     destroy()
     {
-        this.border.destroy(true)
+        this.bubbleContainer.destroy(true)
     }
 }
 

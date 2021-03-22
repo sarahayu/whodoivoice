@@ -20,7 +20,17 @@ class BubbleAnimation
         this.bubble.border.width = this.bubble.border.height = apparentRadius * 2
         const stroke = lerp(MAX_STROKE * (apparentRadius / (MAX_RADIUS + RADIUS_EXPAND)), HOVER_STROKE, this.percentOfFullSize)
         this.bubble.imgSprite.scale.set((apparentRadius - stroke) / apparentRadius)
+
         if (this.percentOfFullSize == 0)
-            this.bubble.border.zIndex = 0
+        {
+            this.bubble.bubbleContainer.zIndex = 0
+            this.bubble.destroyLabels()
+        }
+        else
+        {
+            const offset = this.expanding ? this.percentOfFullSize - 1 : 1 - this.percentOfFullSize
+            this.bubble.redefineLabelCurve(true, apparentRadius - stroke / 2, this.percentOfFullSize, offset)
+            this.bubble.redefineLabelCurve(false, apparentRadius - stroke / 2, this.percentOfFullSize, offset)
+        }
     }
 }
