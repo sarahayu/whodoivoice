@@ -48,7 +48,7 @@ class Bubble
             self.bubbleContainer.addChild(self.border)
             self.bubbleContainer.position.set(options.position.x, options.position.y)
 
-            options.context.app.stage.addChild(self.bubbleContainer)
+            options.context.bubbleStage.addChild(self.bubbleContainer)
         }
 
         function createImgSprite()
@@ -135,9 +135,10 @@ class Bubble
             last mouse pos when user is using touch screen currently
             (users such as myself) */
             !this.context.lastCursor.isMouse 
-            || this.context.activeBubble.value === this)
+            || this.context.activeBubble.value === this
+            /* hovered on another bubble as mouse was dragging, ignore */
+            || (this.context.activeBubble.value && this.context.activeBubble.value.state == BubbleState.DRAGGING))
             return
-
         this.expand(evnt)
         this.state = BubbleState.HOVERED
     }
@@ -164,11 +165,12 @@ class Bubble
             else if (this.state === BubbleState.DORMANT)
                 this.state = BubbleState.HOVERED
         }
+
     }
 
     pointerUp(evnt)
     {
-        if (this.context.activeBubble.value != this)
+        if (this.context.activeBubble.value !== this)
             return
 
         if (this.state === BubbleState.DRAGGING)
@@ -273,6 +275,8 @@ class Bubble
     {
         if (this.state !== BubbleState.DORMANT || this.animation.percentOfFullSize != 0)
             this.animation.update(dt)
+
+        
 
         if (this.state !== BubbleState.DRAGGING)
         {

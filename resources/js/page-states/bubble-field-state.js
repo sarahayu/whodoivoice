@@ -1,19 +1,17 @@
-class Application
+class BubbleFieldState
 {
-    constructor()
+    constructor(appContext)
     {
         const self = this
 
+        this.appContext = appContext
         this.velocityFactor = 1
         this.velocityDecreaseRate = 0.99995
 
         this.bubbleQueue = []
         this.bubbles = []
         this.currentActiveBubble = { value: null }
-        this.lastCursor = { isMouse: true, pointerId: null }
         this.bubblePointerDownCalled = { value: false }
-
-        setupPIXI()
 
         this.bubbleStage = new PIXI.Container()
         this.bubbleStage.sortableChildren = true
@@ -35,20 +33,14 @@ class Application
         $('body')
             .on('pointerdown', evnt =>
             {
-                this.tapEventQueue.push({ priority: 2, callback: () => {
-                    this.lastCursor.isMouse = evnt.pointerType === 'mouse'
-                    
-                    // if user clicks outside of bubble, exit active bubble
-                    // can't simply call stopPropagation by bubble because body's pointerdown is used to detect pointertype
-                    // and we can't cancel it. Instead, we keep boolean in shared context
-    
-    
-                    if (!this.bubblePointerDownCalled.value && this.currentActiveBubble.value)
-                    {
-                        this.currentActiveBubble.value.exit(true)
-                    }
-                    this.bubblePointerDownCalled.value = false
-                } })
+                // if user clicks outside of bubble, exit active bubble
+                // can't simply call stopPropagation by bubble because body's pointerdown is used to detect pointertype
+                // and we can't cancel it. Instead, we keep boolean in shared context
+
+
+                if (!this.bubblePointerDownCalled.value && this.currentActiveBubble.value)
+                    this.currentActiveBubble.value.exit(true)
+                this.bubblePointerDownCalled.value = false
 
             })
             .on('mousemove', () => this.lastCursor.isMouse = true)
@@ -57,50 +49,12 @@ class Application
                     this.currentActiveBubble.value.exit(true)
             })
 
-        
-            this.app.ticker.add(gameLoop)
-
-        function setupPIXI()
+        function update(dt)
         {
-            self.app = new PIXI.Application({
-                width: window.innerWidth,
-                height: window.innerHeight,
-                autoDensity: true,
-                transparent: true,
-                antialias: true
-            })
+            // self.tapEventQueue.sort((first, second) => first.priority - second.priority)
 
-            self.app.renderer.view.style.position = 'absolute'
-            self.app.renderer.view.style.display = 'block'
-            // let fx = new PIXI.filters.FXAAFilter()
-            // app.stage.filters = [ new PIXI.filters.FXAAFilter() ]
-            // const filter = new PIXI.Filter(myVertex, myFragment);
-            // // first is the horizontal shift, positive is to the right
-            // // second is the same as scaleY
-            // filter.uniforms.shadowDirection = [0.4, 0.5];
-            // filter.uniforms.floorY = 0.0;
-            // // how big is max shadow shift to the side?
-            // // try to switch that off ;)
-            // filter.padding = 100;
-
-            document.body.appendChild(self.app.view)
-
-
-            // https://css-tricks.com/building-an-images-gallery-using-pixijs-and-webgl/
-            window.addEventListener('resize', () => {
-                if (self.resizeTimer) clearTimeout(self.resizeTimer)
-                self.resizeTimer = setTimeout(() => 
-                        self.app.renderer.resize(window.innerWidth, window.innerHeight),
-                    200)
-            })
-        }
-
-        function gameLoop(dt)
-        {
-            self.tapEventQueue.sort((first, second) => first.priority - second.priority)
-
-            while (self.tapEventQueue.length != 0)
-                self.tapEventQueue.shift().callback()
+            // while (self.tapEventQueue.length != 0)
+            //     self.tapEventQueue.shift().callback()
 
             self.velocityFactor = Math.max(self.velocityFactor *= self.velocityDecreaseRate, 0.5)
 
@@ -155,9 +109,9 @@ class Application
             clearTimeout(this._bubbleSlower)
 
         const context = {
-            app: this.app,
+            app: this.appContext.pixiApp,
             activeBubble: this.currentActiveBubble,
-            lastCursor: this.lastCursor,
+            lastCursor: this.appContext.lastCursor,
             bubblePointerDownCalled: this.bubblePointerDownCalled,
             bubbleStage: this.bubbleStage,
             tapEventQueue: this.tapEventQueue
@@ -166,4 +120,3 @@ class Application
         createBubbles(vaMALID, this.bubbleQueue, context)
     }
 }
-

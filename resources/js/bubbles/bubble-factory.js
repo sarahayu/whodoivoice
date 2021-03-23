@@ -1,8 +1,3 @@
-/**
- * @param {number} vaMALID 
- * @param {Bubble[]} bubbleQueue 
- * @param {Context} context 
- */
 function createBubbles(vaMALID, bubbleQueue, context)
 {    
     $('#loading-message').hide().text('Getting data...').fadeIn()
