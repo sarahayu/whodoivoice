@@ -2,6 +2,7 @@ html
 {
     width: 100%;
     height: 100%;
+    --accent: #feeae0;
 }
 
 body
@@ -14,21 +15,102 @@ body
     background-color: #DADADA;
 }
 
-#loading-message
+.center-screen
 {
-    z-index: -1;
     position: fixed;
-    font-size: 30px;
     height: 100%;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.wdiv-shadow
+{
+
+}
+
+#loading-message
+{
+    font-size: 30px;
     background-color: inherit;
-    font-family: 'courier new';
+    font-family: 'Courier New', Courier, monospace;
     color: white;
     border: none;
     font-weight: bolder;
     letter-spacing: 0.1em;
     text-shadow: 1px 2px 5px rgba(0,0,0,0.5);
+}
+
+.searcher
+{
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.searchbar
+{
+    width: 50%;
+}
+
+#mal-query
+{
+    all: unset;
+    padding: 1em;
+    box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
+    background-color: white;
+    border-radius: 1em;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.search-result
+{
+    background-color: white;
+    border-radius: 1em;
+    padding: 0 0.5em;
+    cursor: pointer;
+}
+
+.search-result + .search-result
+{
+    margin-top: 1px;
+}
+
+.search-result:hover,.search-result:focus
+{
+    background-color: var(--accent);
+}
+
+.info-wrapper
+{
+    max-width: 100%;
+    width: 20em;
+    margin: auto;
+    padding: 0.6em 0;
+    display: flex;
+    vertical-align: middle;
+    height: 3em;
+}
+
+.thumbnail
+{
+    height: 3em;
+    width: 3em;
+    box-sizing: border-box;
+    background-position: top center;
+    background-size: cover;
+    border-radius: 50%;
+}
+
+.result-str
+{
+    text-align: center;
+    max-width: 60%;
+    padding: 1em;
+    margin: 0 auto;
+    height: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

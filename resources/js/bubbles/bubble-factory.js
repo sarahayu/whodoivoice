@@ -4,8 +4,8 @@ function createBubbles(vaMALID, bubbleQueue, context)
 
     Promise.all([
         requestAnimeRankings(),
-        // $.getJSON(`https://api.jikan.moe/v3/person/${vaMALID}`)
-        $.getJSON('resources/json/placeholder.json')
+        $.getJSON(`https://api.jikan.moe/v3/person/${vaMALID}`)
+        // $.getJSON('resources/json/placeholder.json')
         ])
         .then(([animeRankingData, vaData]) => {            
             updateRankings(animeRankingData)   

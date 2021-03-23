@@ -21,6 +21,8 @@
     <script src="resources/js/util/math-util.js"></script>
     <script src="resources/js/util/render-util.js"></script>
     <script src="resources/js/util/vector.js"></script>
+    <script src="resources/js/page-states/bubble-field-state.js"></script>
+    <script src="resources/js/page-states/search-state.js"></script>
     <script src="resources/js/application.js"></script>
     <script src="resources/js/bubbles/bubble.js"></script>
     <script src="resources/js/bubbles/bubble-animation.js"></script>
@@ -34,15 +36,19 @@
 </head>
 
 <body>
-    <div id="loading-message">
+    <div id="loading-message" class="center-screen">
         Loading...
     </div>
-    <div id="bubble-area">
+    <div id="pixi-area">
+
     </div>
-
-    <script>
-
-    </script>
+    <div class="center-screen searcher">
+        <form class="searchbar">
+            <input placeholder="Search the name of a character or voice actor" type="text" name="mal-query" id="mal-query">
+            <div class="results"></div>
+        </form>
+    </div>
+    <img src="" alt="" srcset="">
 </body>
 
 </html>

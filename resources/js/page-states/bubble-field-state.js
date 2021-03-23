@@ -22,7 +22,7 @@ class BubbleFieldState
             resolution: 2
         }) ]
 
-        this.app.stage.addChild(this.bubbleStage)
+        appContext.pixiApp.stage.addChild(this.bubbleStage)
 
         PIXI.Loader.shared.onStart.add(() => console.log('Starting...'))
         PIXI.Loader.shared.onProgress.add(() => $('#loading-message').text(`${Math.floor(PIXI.Loader.shared.progress)}%`))
@@ -43,32 +43,13 @@ class BubbleFieldState
                 this.bubblePointerDownCalled.value = false
 
             })
-            .on('mousemove', () => this.lastCursor.isMouse = true)
+            .on('mousemove', () => this.appContext.lastCursor.isMouse = true)
             .on('pointerout', () => {
-                if (this.currentActiveBubble.value && this.lastCursor.isMouse)
+                if (this.currentActiveBubble.value && this.appContext.lastCursor.isMouse)
                     this.currentActiveBubble.value.exit(true)
             })
 
-        function update(dt)
-        {
-            // self.tapEventQueue.sort((first, second) => first.priority - second.priority)
-
-            // while (self.tapEventQueue.length != 0)
-            //     self.tapEventQueue.shift().callback()
-
-            self.velocityFactor = Math.max(self.velocityFactor *= self.velocityDecreaseRate, 0.5)
-
-            for (const bubble of self.bubbles)
-                bubble.update(dt, self.velocityFactor)
-
-            for (let b1 = 0; b1 < self.bubbles.length - 1; b1++)
-                for (let b2 = b1 + 1; b2 < self.bubbles.length; b2++)
-                    resolveCollisionVelocity(self.bubbles[b1], self.bubbles[b2])
-
-            for (let b1 = 0; b1 < self.bubbles.length - 1; b1++)
-                for (let b2 = b1 + 1; b2 < self.bubbles.length; b2++)
-                    correctPositions(self.bubbles[b1], self.bubbles[b2])
-        }
+        $('#loading-message').hide()
 
         function startBubbleAdder()
         {
@@ -92,7 +73,7 @@ class BubbleFieldState
         }
     }
 
-    init(vaMALID)
+    enter(options)
     {
         for (const bubble of this.bubbles)
             bubble.destroy()
@@ -116,7 +97,35 @@ class BubbleFieldState
             bubbleStage: this.bubbleStage,
             tapEventQueue: this.tapEventQueue
         }
+        
+        $('#loading-message').text('Loading...').show()
 
-        createBubbles(vaMALID, this.bubbleQueue, context)
+        createBubbles(options.vaMALID, this.bubbleQueue, context)
+    }
+
+    exit()
+    {
+
+    }
+
+    update(dt)
+    {
+        // self.tapEventQueue.sort((first, second) => first.priority - second.priority)
+
+        // while (self.tapEventQueue.length != 0)
+        //     self.tapEventQueue.shift().callback()
+
+        this.velocityFactor = Math.max(this.velocityFactor *= this.velocityDecreaseRate, 0.5)
+
+        for (const bubble of this.bubbles)
+            bubble.update(dt, this.velocityFactor)
+
+        for (let b1 = 0; b1 < this.bubbles.length - 1; b1++)
+            for (let b2 = b1 + 1; b2 < this.bubbles.length; b2++)
+                resolveCollisionVelocity(this.bubbles[b1], this.bubbles[b2])
+
+        for (let b1 = 0; b1 < this.bubbles.length - 1; b1++)
+            for (let b2 = b1 + 1; b2 < this.bubbles.length; b2++)
+                correctPositions(this.bubbles[b1], this.bubbles[b2])
     }
 }

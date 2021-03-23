@@ -4,61 +4,31 @@ class Application
     {
         const self = this
 
-        this.velocityFactor = 1
-        this.velocityDecreaseRate = 0.99995
-
-        this.bubbleQueue = []
-        this.bubbles = []
-        this.currentActiveBubble = { value: null }
         this.lastCursor = { isMouse: true, pointerId: null }
-        this.bubblePointerDownCalled = { value: false }
-
-        setupPIXI()
-
-        this.bubbleStage = new PIXI.Container()
-        this.bubbleStage.sortableChildren = true
-        this.bubbleStage.filters = [ new PIXI.filters.DropShadowFilter({
-            distance: 2,
-            blur: 2,
-            alpha: 0.5,
-            resolution: 2
-        }) ]
-
-        this.app.stage.addChild(this.bubbleStage)
-
-        PIXI.Loader.shared.onStart.add(() => console.log('Starting...'))
-        PIXI.Loader.shared.onProgress.add(() => $('#loading-message').text(`${Math.floor(PIXI.Loader.shared.progress)}%`))
-        PIXI.Loader.shared.onComplete.add(startBubbleAdder)
-
-        this.tapEventQueue = []
 
         $('body')
             .on('pointerdown', evnt =>
             {
-                this.tapEventQueue.push({ priority: 2, callback: () => {
-                    this.lastCursor.isMouse = evnt.pointerType === 'mouse'
-                    
-                    // if user clicks outside of bubble, exit active bubble
-                    // can't simply call stopPropagation by bubble because body's pointerdown is used to detect pointertype
-                    // and we can't cancel it. Instead, we keep boolean in shared context
-    
-    
-                    if (!this.bubblePointerDownCalled.value && this.currentActiveBubble.value)
-                    {
-                        this.currentActiveBubble.value.exit(true)
-                    }
-                    this.bubblePointerDownCalled.value = false
-                } })
-
-            })
-            .on('mousemove', () => this.lastCursor.isMouse = true)
-            .on('pointerout', () => {
-                if (this.currentActiveBubble.value && this.lastCursor.isMouse)
-                    this.currentActiveBubble.value.exit(true)
+                this.lastCursor.isMouse = evnt.pointerType === 'mouse'
             })
 
+        setupPIXI()
+
+        this.states = {
+            bubbleField: new BubbleFieldState({ 
+                pixiApp: this.app, 
+                lastCursor: this.lastCursor,
+                application: this
+            }),
+            searchState: new SearchState({
+                application: this
+            })
+        }
+
+        this.stateStack = [ this.states.searchState ]
+        this.stateChangeQueue = []
         
-            this.app.ticker.add(gameLoop)
+        this.app.ticker.add(gameLoop)
 
         function setupPIXI()
         {
@@ -83,7 +53,7 @@ class Application
             // // try to switch that off ;)
             // filter.padding = 100;
 
-            document.body.appendChild(self.app.view)
+            $('#pixi-area').append(self.app.view)
 
 
             // https://css-tricks.com/building-an-images-gallery-using-pixijs-and-webgl/
@@ -97,73 +67,49 @@ class Application
 
         function gameLoop(dt)
         {
-            self.tapEventQueue.sort((first, second) => first.priority - second.priority)
-
-            while (self.tapEventQueue.length != 0)
-                self.tapEventQueue.shift().callback()
-
-            self.velocityFactor = Math.max(self.velocityFactor *= self.velocityDecreaseRate, 0.5)
-
-            for (const bubble of self.bubbles)
-                bubble.update(dt, self.velocityFactor)
-
-            for (let b1 = 0; b1 < self.bubbles.length - 1; b1++)
-                for (let b2 = b1 + 1; b2 < self.bubbles.length; b2++)
-                    resolveCollisionVelocity(self.bubbles[b1], self.bubbles[b2])
-
-            for (let b1 = 0; b1 < self.bubbles.length - 1; b1++)
-                for (let b2 = b1 + 1; b2 < self.bubbles.length; b2++)
-                    correctPositions(self.bubbles[b1], self.bubbles[b2])
-        }
-
-        function startBubbleAdder()
-        {
-            (function addBubble()
-            {
-                if (self.bubbleQueue.length == 0)
-                    setTimeout(addBubble, 1000)
-                else if (self.bubbleQueue.length == self.bubbles.length)
-                    self._bubbleSlower = setTimeout(() =>
-                    {
-                        console.log('slowed down')
-                        self.velocityDecreaseRate = 0.998
-                    }, 2000)
-
-                else
-                {
-                    self.bubbles.push(self.bubbleQueue[self.bubbles.length])
-                    setTimeout(addBubble, 1000 / 15)
-                }
-            })()
+            for (let i = self.stateStack.length - 1; i >= 0; i--)
+                self.stateStack[i].update(dt)
+            self.processStateQueue()
         }
     }
 
     init(vaMALID)
     {
-        for (const bubble of this.bubbles)
-            bubble.destroy()
+        // this.states.bubbleField.init(vaMALID)
+    }
 
-        this.velocityFactor = 1
-        this.velocityDecreaseRate = 0.99995
+    requestStateChanges(changes)
+    {
+        for (const change of changes)
+            this.requestStateChange(change.action, change.state, change.options)
+    }
 
-        this.bubbleQueue = []
-        this.bubbles = []
-        this.bubbleStage.removeChildren()
+    requestStateChange(action, state, options)
+    {
+        this.stateChangeQueue.push({ 
+            action: action,
+            state: state,
+            options: options
+         })
+    }
 
-        PIXI.Loader.shared.reset()
-        if (this._bubbleSlower)
-            clearTimeout(this._bubbleSlower)
-
-        const context = {
-            app: this.app,
-            activeBubble: this.currentActiveBubble,
-            lastCursor: this.lastCursor,
-            bubblePointerDownCalled: this.bubblePointerDownCalled,
-            bubbleStage: this.bubbleStage,
-            tapEventQueue: this.tapEventQueue
+    processStateQueue()
+    {
+        while (this.stateChangeQueue.length != 0)
+        {
+            const stateChange = this.stateChangeQueue.shift()
+            switch (stateChange.action)
+            {
+                case 'push':
+                    const newState = this.states[stateChange.state]
+                    newState.enter(stateChange.options)
+                    this.stateStack.push(newState)
+                    break;
+                case 'pop':
+                    this.stateStack.pop().exit()
+                    break;
+            }
         }
-
-        createBubbles(vaMALID, this.bubbleQueue, context)
     }
 }
 
