@@ -25,8 +25,10 @@ class Application
             })
         }
 
-        this.stateStack = [ this.states.searchState ]
+        this.stateStack = [ this.states.bubbleField, this.states.searchState ]
         this.stateChangeQueue = []
+
+        this.states.searchState.enter()
         
         this.app.ticker.add(gameLoop)
 
@@ -101,12 +103,16 @@ class Application
             switch (stateChange.action)
             {
                 case 'push':
+                    if (this.stateStack.length != 0)
+                        this.stateStack[this.stateStack.length - 1].setIdle(true)
                     const newState = this.states[stateChange.state]
                     newState.enter(stateChange.options)
                     this.stateStack.push(newState)
                     break;
                 case 'pop':
                     this.stateStack.pop().exit()
+                    if (this.stateStack.length != 0)
+                        this.stateStack[this.stateStack.length - 1].setIdle(false)
                     break;
             }
         }

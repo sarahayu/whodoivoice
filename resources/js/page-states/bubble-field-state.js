@@ -30,6 +30,8 @@ class BubbleFieldState
 
         this.tapEventQueue = []
 
+        this.update = this.activeUpdate
+
         $('body')
             .on('pointerdown', evnt =>
             {
@@ -50,6 +52,7 @@ class BubbleFieldState
             })
 
         $('#loading-message').hide()
+        $('.widget-container').hide()
 
         function startBubbleAdder()
         {
@@ -75,6 +78,8 @@ class BubbleFieldState
 
     enter(options)
     {
+        this.update = this.activeUpdate
+
         for (const bubble of this.bubbles)
             bubble.destroy()
 
@@ -99,8 +104,10 @@ class BubbleFieldState
         }
         
         $('#loading-message').text('Loading...').show()
+        $('.widget-container').show()
+        $('#search-button').click(() => this.appContext.application.requestStateChange('push', 'searchState'))
 
-        createBubbles(options.vaMALID, this.bubbleQueue, context)
+        createBubbles(options.vaMALID, this.bubbleQueue, context, this.appContext.application)
     }
 
     exit()
@@ -108,7 +115,15 @@ class BubbleFieldState
 
     }
 
-    update(dt)
+    setIdle(idle)
+    {
+        if (idle)
+            this.update = () => {}
+        else
+            this.update = this.activeUpdate
+    }
+
+    activeUpdate(dt)
     {
         // self.tapEventQueue.sort((first, second) => first.priority - second.priority)
 

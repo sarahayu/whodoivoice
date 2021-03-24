@@ -1,4 +1,4 @@
-function createBubbles(vaMALID, bubbleQueue, context)
+function createBubbles(vaMALID, bubbleQueue, context, application)
 {    
     $('#loading-message').hide().text('Getting data...').fadeIn()
 
@@ -27,6 +27,16 @@ function createBubbles(vaMALID, bubbleQueue, context)
                 })
             else
                 bubbleQueue.push(createVABubble(voiceActor, context))
+
+
+            // const searchImgURL = 'resources/img/search.png' 
+            // bubbleResourceCalls.push({
+            //     name: searchImgURL,
+            //     url: searchImgURL,
+            //     onComplete: () => {
+            //         bubbleQueue.push(createSearchBubble(searchImgURL, context, application))
+            //     }
+            // })
 
             const finalBubbleAmt = Math.min(MAX_BUBBLES, characters.length)
             for (let i = 0; i < finalBubbleAmt; i++)
@@ -73,7 +83,7 @@ function createVABubble(voiceActor, context)
         position: getOffscreenPoint(),
         textColor: 'white',
         borderColor: 0x0,
-        url: voiceActor.profileURL,
+        callback: createLinkAction(voiceActor.profileURL),
         relativeScale: 1,
         context: context
     })
@@ -89,14 +99,33 @@ function createCharacterBubble(character, offset, context)
         position: getOffscreenPoint(),
         textColor: 'black',
         borderColor: 0xffffff,
-        url: character.profileURL,
+        callback: createLinkAction(character.profileURL),
         relativeScale: getBubbleScale(offset),
-        context: context,
-        offset: offset
+        context: context
+    })
+}
+
+function createSearchBubble(imgLink, context, application)
+{
+    return new Bubble({
+        bottomStr: 'Search',
+        textureID: imgLink,
+        radius: 0.5 * 60 + 40,
+        position: getOffscreenPoint(),
+        textColor: 'black',
+        borderColor: 0xffffff,
+        callback: () => application.requestStateChange('push', 'searchState'),
+        relativeScale: 0.5,
+        context: context
     })
 }
 
 function getBubbleScale(bubbleOffset)
 {
     return lerp(0, 5 / 6, Math.pow((MAX_BUBBLES - bubbleOffset) / MAX_BUBBLES, 2))
+}
+
+function createLinkAction(url)
+{
+    return () => window.open(url, '_blank')
 }

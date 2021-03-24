@@ -2,7 +2,10 @@ html
 {
     width: 100%;
     height: 100%;
-    --accent: #feeae0;
+    --accent: #feebe1;
+    --accent-transparent-300: rgba(254, 235, 225, 0.3);
+    --neutral-100: #ededed;
+    --neutral-200: #dadada;
 }
 
 body
@@ -12,7 +15,9 @@ body
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: #DADADA;
+    background-color: var(--neutral-200);
+    font-family: 'Courier New', Courier, monospace;
+    position: relative;
 }
 
 .center-screen
@@ -25,16 +30,10 @@ body
     justify-content: center;
 }
 
-.wdiv-shadow
-{
-
-}
-
 #loading-message
 {
     font-size: 30px;
     background-color: inherit;
-    font-family: 'Courier New', Courier, monospace;
     color: white;
     border: none;
     font-weight: bolder;
@@ -42,14 +41,96 @@ body
     text-shadow: 1px 2px 5px rgba(0,0,0,0.5);
 }
 
-.searcher
+.widget-container
 {
-    font-family: 'Courier New', Courier, monospace;
+    position: absolute;
+    bottom: 2em;
+    left: 2em;
 }
 
-.searchbar
+.field-widgets
+{
+    padding: 0;
+    margin: 0;
+}
+
+.field-widgets2
+{
+    margin-left: -1em;
+}
+
+.field-widget
+{
+    font-weight: bold;
+    margin: 0;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.field-widget + .field-widget
+{
+    margin-left: 1em;
+}
+
+.field-widget a
+{
+    text-decoration: inherit;
+    color: inherit;
+    display: block;
+    margin: 0;
+    background-color: white;
+    font-size: 2em;
+    box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
+    border-radius: 50%;
+    line-height: 1;
+    width: 2em;
+    height: 2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.field-widget a:hover
+{
+    background-color: var(--neutral-100);
+}
+
+.field-widget img
+{
+    width: 70%;
+    height: 70%;
+}
+
+.search-container
+{
+}
+
+.searcher
 {
     width: 50%;
+}
+
+.exit-button
+{
+    background-color: white;
+    margin: 0 auto;
+    width: min-content;
+    user-select: none;
+    font-size: 2em;
+    margin-bottom: 0.5em;
+    box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
+    padding: 0.2em 0.4em;
+    border-radius: 50%;
+    display: flex;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+.exit-button:hover,
+.exit-button:focus
+{
+    background-color: var(--neutral-100);
+    cursor: pointer;
 }
 
 #mal-query
@@ -109,7 +190,6 @@ body
     max-width: 60%;
     padding: 1em;
     margin: 0 auto;
-    height: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -15,21 +15,12 @@ const MAX_STROKE = 10 // stroke thickiness for largest circle
 const HOVER_STROKE = 30 // actual stroke for when hovered
 const MAX_BUBBLES = 25
 
-let engineInitialize
-
 jQuery(function() {
 
     freezeObjects()
     initPIXI()
     
     const app = new Application()
-
-    engineInitialize = function(malID)
-    {
-        app.init(malID)
-    }
-
-    engineInitialize(6686)
 
     function freezeObjects()
     {

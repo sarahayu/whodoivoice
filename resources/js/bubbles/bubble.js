@@ -4,8 +4,13 @@ class Bubble
     {
         const self = this
         // instantiate visual elements ie label, picture
-        this.topStr = trimMaxLength(options.topStr, 18)
-        this.bottomStr = trimMaxLength(options.bottomStr, 18)
+
+        console.log(options.topStr)
+
+        if (options.topStr)
+            this.topStr = trimMaxLength(options.topStr, 18)
+        if (options.bottomStr)
+            this.bottomStr = trimMaxLength(options.bottomStr, 18)
         this.radius = options.radius
         this.textColor = options.textColor
         this.context = options.context
@@ -21,7 +26,7 @@ class Bubble
         // instantiate animation props and mouse interaction stuff
         this.animation = new BubbleAnimation(this)
         this.dragged = false
-        this.url = options.url
+        this.callback = options.callback
         this.state = BubbleState.DORMANT
         this.topLabel = {}
         this.bottomLabel = {}
@@ -122,10 +127,9 @@ class Bubble
         this.bubbleContainer.zIndex = 2
 
         if (!this.topLabel.textRope)
-        {
             this.attachText(this.topLabel, this.topStr, 1, 'normal')
+        if (!this.bottomLabel.textRope)
             this.attachText(this.bottomLabel, this.bottomStr, -1, 'bold')
-        }
     }
 
     hover(evnt)
@@ -179,7 +183,10 @@ class Bubble
             this.state = BubbleState.HOVERED
         }
         else if (this.state === BubbleState.CLICKED)
-            window.open(this.url, '_blank')
+        {
+            this.callback()
+            this.state = BubbleState.HOVERED
+        }
 
         if (evnt.data.pointerType !== 'mouse')
         {
