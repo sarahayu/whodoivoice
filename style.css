@@ -125,14 +125,19 @@ a
     visibility: hidden;
 }
 
-.widget-desc span
+.widget-desc span,
+.widget-desc span::after
 {
     background-color: white;
+}
+
+.widget-desc span
+{
     padding: 0.5em 0.75em;
-    box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
     border-radius: 0.3em;
     position: relative;
     display: inline-block;
+    box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
 }
 
 .widget-desc span:last-child::after
@@ -146,7 +151,6 @@ a
     height: 1em;
     text-align: center;
     transform: translateX(-50%);
-    background-color: white;
     border-radius: 50%;
 }
 
