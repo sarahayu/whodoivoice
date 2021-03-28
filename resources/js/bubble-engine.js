@@ -106,7 +106,6 @@ function createBubbles(vaMALID)
         .catch(err => {
             console.log(err)
         })
-}
 
 function addBubbles()
 {
