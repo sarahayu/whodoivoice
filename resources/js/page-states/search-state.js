@@ -21,9 +21,10 @@ class SearchState
                 this.addSearchResult(query, 'resources/img/image.png', parseInt(query))
             });
 
-        $('.exit-button').click(() => appContext.application.requestStateChange('pop'))
+        $('.exit-button').click(() => this.appContext.application.requestStateChange('pop'))
 
-        $('.search-container').hide()
+        $('.search-container')
+            .hide()
     }
 
     enter(options)
@@ -35,6 +36,7 @@ class SearchState
     {
         $('.results').empty()
         $('.search-container').hide()
+        $('#mal-query').val('')
     }
 
     setIdle(idle)
@@ -49,9 +51,9 @@ class SearchState
 
     addSearchResult(name, img, malID)
     {
-        const searchResult = $('<div/>', {
+        const searchResult = $('<a/>', {
             'class': 'search-result',
-            tabindex: '0',
+            href: '#',
             on: {
                 'click': () => 
                 {

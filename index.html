@@ -44,21 +44,32 @@
     </div>
     <div class="widget-container">
         <ul class="field-widgets">
-            <li class="field-widget"><a href="#" id="search-button"><img src="resources/img/search.png" alt="Search"></a></li>
-            <li class="field-widget"><a href="#">S</a></li>
-            <li class="field-widget"><a href="#">O</a></li>
+            <li>
+                <button class="field-widget" href="#" id="search-button">
+                    <div class="widget-desc"><span>Search</span></div>
+                    <img src="resources/img/search.png" alt="Search">
+                </button>
+            </li>
+            <li>
+                <button class="field-widget" href="#" id="toggle-shadows">
+                    <div class="widget-desc">
+                        <span class="addtl-desc">Performance boost when shadows turned off</span>
+                        <span>Toggle Shadows</span>
+                    </div>
+                    S
+                </button>
+            </li>
         </ul>
     </div>
     <div class="center-screen search-container">
         <div class="searcher">
-            <div class="exit-button" tabindex="0"><span>&times;</span></div>
+            <button class="exit-button">&times;</button>
             <form class="searchbar">
                 <input placeholder="Enter the MAL ID of a voice actor" type="text" name="mal-query" id="mal-query">
                 <div class="results"></div>
             </form>
         </div>
     </div>
-    <img src="" alt="" srcset="">
 </body>
 
 </html>

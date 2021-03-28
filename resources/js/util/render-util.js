@@ -14,3 +14,8 @@ function defineCurvePoints(points, radius, texWidth, offset)
         points[i] = new PIXI.Point( x, y )
     }
 }
+
+function getMousePos(pixiApp)
+{
+    return pixiApp.renderer.plugins.interaction.mouse.global
+}

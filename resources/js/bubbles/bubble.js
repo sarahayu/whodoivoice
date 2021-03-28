@@ -5,8 +5,6 @@ class Bubble
         const self = this
         // instantiate visual elements ie label, picture
 
-        console.log(options.topStr)
-
         if (options.topStr)
             this.topStr = trimMaxLength(options.topStr, 18)
         if (options.bottomStr)
@@ -138,7 +136,7 @@ class Bubble
             /* this is for making sure bubbles don't expand when floating over 
             last mouse pos when user is using touch screen currently
             (users such as myself) */
-            !this.context.lastCursor.isMouse 
+            !this.context.lastCursor.isMouse
             || this.context.activeBubble.value === this
             /* hovered on another bubble as mouse was dragging, ignore */
             || (this.context.activeBubble.value && this.context.activeBubble.value.state == BubbleState.DRAGGING))

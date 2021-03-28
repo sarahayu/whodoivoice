@@ -15,12 +15,17 @@ class BubbleFieldState
 
         this.bubbleStage = new PIXI.Container()
         this.bubbleStage.sortableChildren = true
-        this.bubbleStage.filters = [ new PIXI.filters.DropShadowFilter({
+
+        this.shadowFilter = new PIXI.filters.DropShadowFilter({
             distance: 2,
             blur: 2,
             alpha: 0.5,
             resolution: 2
-        }) ]
+        })
+        
+        this.bubbleStage.filters = [ this.shadowFilter ]
+
+        this.totalBubbles = { value: 0 }
 
         appContext.pixiApp.stage.addChild(this.bubbleStage)
 
@@ -29,8 +34,9 @@ class BubbleFieldState
         PIXI.Loader.shared.onComplete.add(startBubbleAdder)
 
         this.tapEventQueue = []
+        this.$widgetContainer = $('.widget-container')
 
-        this.update = this.activeUpdate
+        this.setIdle(true)
 
         $('body')
             .on('pointerdown', evnt =>
@@ -44,29 +50,65 @@ class BubbleFieldState
                     this.currentActiveBubble.value.exit(true)
                 this.bubblePointerDownCalled.value = false
 
-            })
-            .on('mousemove', () => this.appContext.lastCursor.isMouse = true)
-            .on('pointerout', () => {
+                this.mouseIn = true
+                this.checkWidgetAccessAttempt(evnt.pageY)
+
+            }).on('pointerout', () => {
                 if (this.currentActiveBubble.value && this.appContext.lastCursor.isMouse)
                     this.currentActiveBubble.value.exit(true)
-            })
+            }).mouseleave(() => {
+                this.mouseIn = false
+                if (!this.$widgetContainer.hasClass('hidden'))
+                    this.killWidgetDelayed()
+            }).mouseenter(() => this.mouseIn = true)
 
         $('#loading-message').hide()
-        $('.widget-container').hide()
+        this.$widgetContainer
+        // TODO get shit to work when mouse is over widget container
+        //     .bind('pointerover pointerdown pointerup pointercancel pointermove pointerout', evnt => {
+        //         const app = this.appContext.pixiApp
+        //         const interMnger = app.renderer.plugins.interaction
+
+        //         var interactionData = interMnger.getInteractionDataForPointerId(interMnger.normalizeToPointerData(evnt)[0]);
+        //         var interactionEvent = interMnger.configureInteractionEventForDOMEvent(interMnger.eventData, evnt, interactionData);
+        //         interactionEvent.data.originalEvent = evnt;
+
+        //         // const hitObject = interMnger.hitTest(interactionData.global, app.stage)
+
+        //         // if (hitObject)
+        //         //     hitObject.emit(evnt.type, interactionEvent)
+
+        //         interMnger.processInteractive(interactionEvent, app.stage, interMnger.processPointerOverOut, true)
+        //     })
+            .addClass('hidden').hide()
+            .focusout(() => this.widgetFocused = false)
+
+        $('.field-widget').focus(() => {
+            this.widgetSetVisible(true)
+            this.widgetFocused = true
+        })
+            
+        $('#search-button').click(() => {
+            this.$widgetContainer.hide()
+            this.appContext.application.requestStateChange('push', 'searchState')
+        })
+        $('#toggle-shadows').click(() => {
+            if (this.bubbleStage.filters.length === 0)
+                this.bubbleStage.filters = [ this.shadowFilter ]
+            else
+                this.bubbleStage.filters = []
+        })
 
         function startBubbleAdder()
         {
             (function addBubble()
             {
-                if (self.bubbleQueue.length == 0)
-                    setTimeout(addBubble, 1000)
-                else if (self.bubbleQueue.length == self.bubbles.length)
-                    self._bubbleSlower = setTimeout(() =>
-                    {
-                        console.log('slowed down')
-                        self.velocityDecreaseRate = 0.998
-                    }, 2000)
-
+                if (self.bubbles.length === self.totalBubbles.value)
+                {
+                    self._bubbleSlower = setTimeout(() => self.velocityDecreaseRate = 0.998, 2000)
+                    self.bubblesAllAdded = true
+                    self.showWidgetTemporarily()
+                }
                 else
                 {
                     self.bubbles.push(self.bubbleQueue[self.bubbles.length])
@@ -100,19 +142,21 @@ class BubbleFieldState
             lastCursor: this.appContext.lastCursor,
             bubblePointerDownCalled: this.bubblePointerDownCalled,
             bubbleStage: this.bubbleStage,
-            tapEventQueue: this.tapEventQueue
+            tapEventQueue: this.tapEventQueue,
+            totalBubbles: this.totalBubbles
         }
         
         $('#loading-message').text('Loading...').show()
-        $('.widget-container').show()
-        $('#search-button').click(() => this.appContext.application.requestStateChange('push', 'searchState'))
+        this.$widgetContainer.show()
 
         createBubbles(options.vaMALID, this.bubbleQueue, context, this.appContext.application)
     }
 
     exit()
     {
-
+        this.$widgetContainer.addClass('hidden').hide()
+        clearTimeout(this.widgetKiller)
+        this.widgetKiller = null
     }
 
     setIdle(idle)
@@ -120,7 +164,10 @@ class BubbleFieldState
         if (idle)
             this.update = () => {}
         else
+        {
+            this.$widgetContainer.show()
             this.update = this.activeUpdate
+        }
     }
 
     activeUpdate(dt)
@@ -142,5 +189,53 @@ class BubbleFieldState
         for (let b1 = 0; b1 < this.bubbles.length - 1; b1++)
             for (let b2 = b1 + 1; b2 < this.bubbles.length; b2++)
                 correctPositions(this.bubbles[b1], this.bubbles[b2])
+
+        this.checkWidgetAccessAttempt(getMousePos(this.appContext.pixiApp).y)
+
+    }
+
+    checkWidgetAccessAttempt(mouseY)
+    {
+        const containerVisible = !this.$widgetContainer.hasClass('hidden')
+
+        if (!containerVisible
+            && this.mouseIn && mouseY >= (window.innerHeight - parseFloat(this.$widgetContainer.css('font-size')) * 6)
+            && this.bubblesAllAdded)
+        {
+            console.log(mouseY)
+            if (!containerVisible)
+                this.widgetSetVisible(true)
+        }
+        else if (containerVisible && !this.widgetKiller && !this.widgetFocused)
+            this.killWidgetDelayed()
+    }
+
+    showWidgetTemporarily()
+    {
+        this.widgetSetVisible(true)
+        this.killWidgetDelayed()
+    }
+
+    killWidgetDelayed()
+    {
+        this.widgetKiller = setTimeout(() => {
+            this.widgetSetVisible(false)
+            this.widgetKiller = null
+        }, 3000)
+    }
+
+    widgetSetVisible(visible)
+    {
+        if (visible)
+        {
+            this.$widgetContainer.removeClass('hidden')
+            if (this.widgetKiller)
+            {
+                clearTimeout(this.widgetKiller)
+                this.widgetKiller = null
+            }
+        }
+        else
+            this.$widgetContainer.addClass('hidden')
     }
 }

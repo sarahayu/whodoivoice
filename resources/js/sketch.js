@@ -13,7 +13,7 @@ const LARGEST_RADIUS = MAX_RADIUS + RADIUS_EXPAND
 const LARGEST_DIAMETER = LARGEST_RADIUS * 2
 const MAX_STROKE = 10 // stroke thickiness for largest circle
 const HOVER_STROKE = 30 // actual stroke for when hovered
-const MAX_BUBBLES = 25
+const MAX_BUBBLES = 35
 
 jQuery(function() {
 

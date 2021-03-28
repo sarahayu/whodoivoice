@@ -11,6 +11,10 @@ class Application
             {
                 this.lastCursor.isMouse = evnt.pointerType === 'mouse'
             })
+            .on('mousemove', () => this.lastCursor.isMouse = true)
+        $("button").mouseup(function() {
+            $(this).blur();
+        })
 
         setupPIXI()
 
@@ -21,6 +25,7 @@ class Application
                 application: this
             }),
             searchState: new SearchState({
+                pixiApp: this.app, 
                 application: this
             })
         }

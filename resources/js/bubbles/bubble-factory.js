@@ -53,6 +53,8 @@ function createBubbles(vaMALID, bubbleQueue, context, application)
                     bubbleQueue.push(createCharacterBubble(characters[i], i, context))
             }
 
+            context.totalBubbles.value = finalBubbleAmt + 1
+
 
             PIXI.Loader.shared
                 .add(bubbleResourceCalls)
